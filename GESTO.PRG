@@ -19,6 +19,10 @@ STATIC nRow := 25
 STATIC nCol := 80
 STATIC listePaiement := {"CBleue", "Cheque", "Especes", "TRestaurant"}
 
+GLOBAL EXTERN vatChangeDate
+GLOBAL EXTERN vatBeforeChangeDate
+GLOBAL EXTERN vatAfterChangeDate
+
 PROCEDURE MAIN()
 	LOCAL aaParam := {}
 	LOCAL aSet
@@ -28,6 +32,7 @@ PROCEDURE MAIN()
 	SetMode(nRow, nCol)
 	HB_SetCodePage("FR")
 	SET DATE TO FRENCH
+	INIT_GLOBALVAR()         // initialisation des variables globales des paramétres.
 	KEYBOARD Chr(255)        // pour que la première fois qu'on entre dans l'appli, on applique une réactualisation de l'écran
 	Inkey()
 	DO WHILE LastKey() <> 81 .AND. LastKey() <> 113
@@ -94,7 +99,11 @@ PROCEDURE MAIN()
 			CASE 98  //  code ASCII pour 'b'
 				VIEW_LISTE_RECETTE()
 				EXIT
-			CASE 255
+			CASE 80  //  code ASCII pour 'P'
+			CASE 112 //  code ASCII pour 'p'
+				DISP_PARAMETERS()
+				EXIT
+			CASE 255 
 				EXIT
 			DEFAULT
 				actualisation := .F.
@@ -115,6 +124,11 @@ PROCEDURE DISP_MAIN_WINDOW()
 	CLS
 	DispBox(0, 0, nRow - 1, nCol - 1, B_DOUBLE, "G+/B+")
 	HB_LangSelect("FR")
+	SET CENTURY ON
+	SET DATE TO AMERICAN
+	@ 10, 10 SAY vatChangeDate
+	@ 11, 10 SAY vatBeforeChangeDate
+	@ 12, 10 SAY vatAfterChangeDate
 	DISP_DATE()
 	DISP_TABLE()
 	DISP_HEADER()
