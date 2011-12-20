@@ -15,8 +15,10 @@ REQUEST HB_LANG_FR
 #define SIRET 44153813200013
 #define DEFAUT_REMISE 10
 
-STATIC nRow := 25
-STATIC nCol := 80
+//STATIC nRow := 25
+//STATIC nCol := 80
+GLOBAL nRow := 25
+GLOBAL nCol := 80
 STATIC listePaiement := {"CBleue", "Cheque", "Especes", "TRestaurant"}
 
 GLOBAL EXTERN vat1ChangeDate
@@ -125,10 +127,12 @@ PROCEDURE DISP_MAIN_WINDOW()
 	CLS
 	DispBox(0, 0, nRow - 1, nCol - 1, B_DOUBLE, "G+/B+")
 	HB_LangSelect("FR")
+	SET FIXED on
 	@ 10, 10 SAY vat1ChangeDate
 	@ 11, 10 SAY vat1BeforeChangeDate
 	@ 12, 10 SAY vat1AfterChangeDate
 	@ 13, 10 SAY vat2Value
+	@ 14, 10 SAY Date() >= vat1ChangeDate
 	DISP_DATE()
 	DISP_TABLE()
 	DISP_HEADER()
@@ -577,7 +581,7 @@ PROCEDURE DISP_FICHE_INFO_WINDOW()
 	@ 12, 15 SAY "nb client : " PICTURE "@!" COLOR "RB+/B+" GET nbClient PICTURE "999" RANGE 0, 100
 	@ 14, 15 SAY "prix : " PICTURE "@!" COLOR "RB+/B+" GET prix PICTURE "9999.99" RANGE 0, 1000
 	READ
-	IMPRIME_FICHE(date, nbClient, prix, 5.5)
+	IMPRIME_FICHE(date, nbClient, prix, GET_VAT1_BY_DATE(date))
 RETURN 
 
 PROCEDURE VIEW_TABLE(nFact)
@@ -593,6 +597,7 @@ PROCEDURE VIEW_TABLE(nFact)
 	LOCAL tauRemise
 	LOCAL totalRemise
 	LOCAL realNumTable := GET_NUM_TABLE(nFact)
+	LOCAL vat1 := GET_VAT1_BY_FACTURE(nFact)
 	//LOCAL defaultRemise := 10
 	LOCAL exitCondition := (GET_NB_PLAT(nFact) == 0)
 	DO WHILE LastKey() <> K_ESC .AND. .NOT. exitCondition
@@ -619,10 +624,20 @@ PROCEDURE VIEW_TABLE(nFact)
 		@1, 1 SAY "table : " + realNumTable PICTURE "@!" COLOR "R+/B+"
 		@1, 20 SAY "nb client : " + str(nbClient) PICTURE "@!" COLOR "R+/B+"
 		@1, 50 SAY "total : " + str(dispTotal) PICTURE "@!" COLOR "R+/B+"
-		@2, 1 SAY "tva 19.6% : " PICTURE "@!" COLOR "R+/B+"
-		@2, 12 SAY Round(totalBoisson * (tauRemise / 100) * 0.196 / 1.196, 2) PICTURE "999.99"
-		@2, 20 SAY "tva 5.5% : " PICTURE "@!" COLOR "R+/B+"
-		@2, 30 SAY Round(totalPlat * (tauRemise / 100) * 0.055 / 1.055, 2) PICTURE "999.99"
+		
+		// Ne plus afficher la TVA directement dans le code 
+		//@2, 1 SAY "tva 19.6% : " PICTURE "@!" COLOR "R+/B+"
+		
+		@2, 1 SAY "tva " + str(vat2Value, 5, 2) + "% : " PICTURE "@!" COLOR "R+/B+"
+		//@2, 12 SAY Round(totalBoisson * (tauRemise / 100) * 0.196 / 1.196, 2) PICTURE "999.99"
+		@2, 12 SAY COMPUTE_TVA(totalBoisson, vat2Value) PICTURE "999.99"
+		
+		// Ne plus afficher la TVA directement dans le code
+		//@2, 20 SAY "tva 5.5% : " PICTURE "@!" COLOR "R+/B+"
+		
+		@2, 20 SAY "tva " + str(vat1, 5, 2) + "% :" PICTURE "@!" COLOR "R+/B+"
+		@2, 30 SAY COMPUTE_TVA(totalPlat, vat1) PICTURE "999.99"
+		//@2, 30 SAY Round(totalPlat * (tauRemise / 100) * 0.055 / 1.055, 2) PICTURE "999.99"
 		//@2, 45 SAY "tau remise : " + str(100 - tauRemise) + "%" PICTURE "@!" COLOR "R+/B+"
 		@2, 45 SAY "remise : " + AllTrim(str(totalRemise)) PICTURE "@!" COLOR "R+/B+"
 		nSelectPlat := Achoice(beginRow + 1, 6, 20, 75, platListe, {}, "USERFUNC")
@@ -663,7 +678,9 @@ PROCEDURE VIEW_TABLE(nFact)
 				EXIT
 			CASE 70   // code ASCII pour 'F'
 			CASE 102  // code ASCII pour 'f'
-				IMPRIME_FICHE(GET_DATE_CREATION(nFact), nbClient, dispTotal, 5.5)
+				//IMPRIME_FICHE(GET_DATE_CREATION(nFact), nbClient, dispTotal, 5.5)
+				// on imprime toujours la fiche sur la base de la tva1
+				IMPRIME_FICHE(GET_DATE_CREATION(nFact), nbClient, dispTotal, vat1)
 				KEYBOARD Chr(255)  // Pour que le ESC de l'annulation ne soit pas intercepté par la boucle principale
 				Inkey()
 				EXIT
@@ -778,8 +795,10 @@ PROCEDURE CLOTURER(date)
 	LOCAL total := GET_TOTAL_RECETTE(date)
 	LOCAL st_55 := GET_TVA_1(date)
 	LOCAL st_196 := GET_TVA_2(date)
-	LOCAL tva1 := COMPUTE_TVA(GET_TVA_1(date), 5.5)
-	LOCAL tva2 := COMPUTE_TVA(GET_TVA_2(date), 19.6)
+	//LOCAL tva1 := COMPUTE_TVA(GET_TVA_1(date), 5.5)
+	//LOCAL tva2 := COMPUTE_TVA(GET_TVA_2(date), 19.6)
+	LOCAL tva1 := COMPUTE_TVA(GET_TVA_1(date), GET_VAT1_BY_DATE(date))
+	LOCAL tva2 := COMPUTE_TVA(GET_TVA_2(date), vat2Value)
 	LOCAL service := GET_TOTAL_RECETTE_SERVICE(date)
 	LOCAL emporte := GET_TOTAL_RECETTE_EMPORTE(date)
 	LOCAL cb := GET_TOTAL_CB(date)
@@ -795,8 +814,10 @@ PROCEDURE CLOTURER(date)
 	@ 8, 8 SAY "total : " PICTURE "@!" GET total PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
 	@ 9, 8 SAY "service : " PICTURE "@!" GET service PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
 	@ 10, 8 SAY "emporte : " PICTURE "@!" GET emporte PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
-	@ 11, 8 SAY "ST tva 5.5% : " PICTURE "@!" GET st_55 PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
-	@ 12, 8 SAY "ST tva 19.6% : " PICTURE "@!" GET st_196 PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
+	//@ 11, 8 SAY "ST tva 5.5% : " PICTURE "@!" GET st_55 PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
+	//@ 12, 8 SAY "ST tva 19.6% : " PICTURE "@!" GET st_196 PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
+	@ 11, 8 SAY "ST tva " + str(GET_VAT1_BY_DATE(date), 5, 2) + "% : " PICTURE "@!" GET st_55 PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
+	@ 12, 8 SAY "ST tva " + str(vat2Value, 5, 2) + "% : " PICTURE "@!" GET st_196 PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
 	@ 13, 8 SAY "carte bleue : " PICTURE "@!" GET cb PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
 	@ 14, 8 SAY "cheque : " PICTURE "@!" GET chq PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
 	@ 15, 8 SAY "especes : " PICTURE "@!" GET esp PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
@@ -861,9 +882,11 @@ PROCEDURE DISP_RECETTE_TOTAL(date)
 	@ 22, 55 SAY "emporte : " + PadL(ALLTrim(str(GET_TOTAL_RECETTE_EMPORTE(date))), 7) + " }" PICTURE "@!"
 RETURN
 
+/*
 PROCEDURE DISP_BILAN_MOIS_HEADER()
 	@ 0, 0 SAY "   date     cl    total service  emporte tva 5.5%  tva 19.6%  cb   chq  esp   tr" PICTURE "@!"
 RETURN
+*/
 
 PROCEDURE MODIF_RECORD(nFact, record)
 	//LOCAL tab := HB_RegExSplit(" - ", record)
@@ -951,6 +974,8 @@ PROCEDURE DISP_BILAN_ANNEE_MOIS_ENTRY_WINDOW()
 	DISP_BILAN_ANNEE_MOIS(annee)
 RETURN
 
+/******* Méthode d'impression de fiche ********/
+// REMARQUE : étant donnée qu'à chaque fois, on l'utilise avec la tva1, envisager peut-être de l'intégrer directement dans le corps de la méthode.
 PROCEDURE IMPRIME_FICHE(date, nbClient, prix, tva)
 	LOCAL init := Chr(27)+Chr(64)
 	LOCAL emphasis := Chr(27)+Chr(69)+Chr(1)
@@ -1001,6 +1026,9 @@ RETURN
 
 PROCEDURE IMPRIME_ADDITION_TVA1(nFact)
 	// Imprime la facture de la table numTable TVA : 5.5
+	// Cf méthode 'imprime_addition_tva2'
+	// méthode appelée lorsqu'on clique sur "E" donc demande de remise
+	
 	LOCAL GetList := {}
 	LOCAL remise := DEFAUT_REMISE
 	SetColor("W+/RG")
@@ -1021,6 +1049,13 @@ RETURN
 
 PROCEDURE IMPRIME_ADDITION_TVA2(nFact)
 	// Imprime la facture de la table numTable TVA : 19.6
+	// Correctif : il semblerait que celà ne soit plus vrai
+	// 19.6 était pour les commandes sur place, et 5.5 pour les emporté
+	// mais depuis le 1er juillet 2009, les plats et boissons non alcoolisées
+	// sont soumis à une tva de 5.5 % tandis que les boissons alcoolisées restent
+	// à 19.6 et ce quelque soit le statut de la commande (emporté ou sur place).
+	// à prendre en compte dans les futurs dev.
+	// Méthode appelée lorsqu'on clique sur "i" donc pas d'application de la remise
 	
 	UPDATE_LISTE_TABLE_STATUS(nFact, 1)
 	UPDATE_LISTE_TABLE_ST(nFact, "S")
@@ -1040,6 +1075,7 @@ PROCEDURE SPOOL_FACTURE(nFact, type)
 	LOCAL doubleStrikeOff := Chr(27)+Chr(71)+Chr(0)
 	LOCAL date := GET_DATE_CREATION(nFact)
 	LOCAL remise := GET_TOTAL_REMISE(nFact) > 0
+	LOCAL vat1 := GET_VAT1_BY_DATE(nFact)
 	gprinter = GetDefaultPrinter()
 	SET PRINTER ON
     SET PRINTER TO &gprinter
@@ -1072,9 +1108,12 @@ PROCEDURE SPOOL_FACTURE(nFact, type)
 	ENDIF
 	? ""
 	/********** Modification du 27/11/2009 : changement TVA Emporter à 19.6 *****************/
-	? "       Dont TVA   5.50% : " + PadL(AllTrim(str(Round(((GET_TOTAL_55(nFact) - GET_TOTAL_REMISE_55(nFact)) * 0.055)/1.055, 2))), 7)
-	? "       Dont TVA  19.60% : " + PadL(AllTrim(str(Round(((GET_TOTAL_196(nFact) - GET_TOTAL_REMISE_196(nFact)) * 0.196)/1.196, 2))), 7)
+	//? "       Dont TVA   5.50% : " + PadL(AllTrim(str(Round(((GET_TOTAL_55(nFact) - GET_TOTAL_REMISE_55(nFact)) * 0.055)/1.055, 2))), 7)
+	//? "       Dont TVA  19.60% : " + PadL(AllTrim(str(Round(((GET_TOTAL_196(nFact) - GET_TOTAL_REMISE_196(nFact)) * 0.196)/1.196, 2))), 7)
 	
+	/***************** Modification du 20/12/2011 : variabiliser les tva en fonction du paramétrage et de la date *************************/
+	? "         Dont TVA  " + str(vat1, 5, 2) + "% : " + str(COMPUTE_TVA(GET_TOTAL_55(nFact) - GET_TOTAL_REMISE_55(nFact), vat1), 7, 2)
+	? "         Dont TVA  " + str(vat2Value, 5, 2) + "% : " + str(COMPUTE_TVA(GET_TOTAL_196(nFact) - GET_TOTAL_REMISE_196(nFact), vat2Value), 7, 2)
 	/**************** old code *****************************************/
 	/*
 	IF type == "S" 
@@ -1174,7 +1213,7 @@ RETURN
 
 
 /* Méthode de navigation dans la liste des plats */
-FUNCTION UserFunc(nMode, nElement, nRow)
+FUNCTION UserFunc(nMode, nElement, rowNumber)
 	LOCAL key := LastKey()
 	LOCAL ret := AC_CONT	
 	DO CASE
@@ -1208,7 +1247,7 @@ FUNCTION UserFunc(nMode, nElement, nRow)
 	ENDCASE
 RETURN ret
 
-FUNCTION gestion_edition_plat(nMode, nElement, nRow)
+FUNCTION gestion_edition_plat(nMode, nElement, rowNumber)
 	LOCAL key := LastKey()
 	LOCAL ret := AC_CONT
 	DO CASE
@@ -1228,7 +1267,7 @@ FUNCTION gestion_edition_plat(nMode, nElement, nRow)
 	ENDCASE
 RETURN ret
 
-FUNCTION recetteUserFunc(nMode, nElement, nRow)
+FUNCTION recetteUserFunc(nMode, nElement, rowNumber)
 	LOCAL key := LastKey()
 	LOCAL ret := AC_CONT
 	DO CASE
@@ -1248,7 +1287,7 @@ FUNCTION recetteUserFunc(nMode, nElement, nRow)
 	ENDCASE
 RETURN ret
 
-FUNCTION BILAN_USER_FUNC(nMode, nElement, nRow)
+FUNCTION BILAN_USER_FUNC(nMode, nElement, rowNumber)
 	LOCAL key := LastKey()
 	LOCAL ret := AC_CONT
 	DO CASE
@@ -1256,10 +1295,10 @@ FUNCTION BILAN_USER_FUNC(nMode, nElement, nRow)
 	CASE nMode == AC_EXCEPT
 		IF key == K_LEFT
 			ret := AC_CONT
-			Scrollfixed(1, 1, nRow - 2, nCol - 2, 20, 0)
+			Scrollfixed(1, 1, rowNumber - 2, nCol - 2, 20, 0)
 		ELSEIF key == K_RIGHT
 			ret := AC_CONT
-			Scrollfixed(1, 1, nRow - 2, nCol - 2, -20, 0)
+			Scrollfixed(1, 1, rowNumber - 2, nCol - 2, -20, 0)
 		ELSEIF key == K_ESC
 			ret := AC_ABORT
 		ENDIF

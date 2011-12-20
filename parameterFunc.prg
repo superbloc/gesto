@@ -6,23 +6,15 @@
 /************************************************/
 
 #include "Inkey.ch"
+#include "Box.ch"
 
 GLOBAL vat1ChangeDate
 GLOBAL vat1BeforeChangeDate
 GLOBAL vat1AfterChangeDate
 GLOBAL vat2Value
 
-// A enlever pour intégration dans gesto
-/*
-PROCEDURE MAIN()
-	SET DATE TO FRENCH
-	SET FIXED on
-	INIT_GLOBALVAR()
-	? vatChangeDate
-	? vatBeforeChangeDate
-	? vatAfterChangeDate
-RETURN
-*/
+GLOBAL EXTERN nRow
+GLOBAL EXTERN nCol
 
 // Procédure d'initialisation des variables globales.
 PROCEDURE INIT_GLOBALVAR
@@ -52,8 +44,9 @@ PROCEDURE INIT_GLOBALVAR
 	CLOSE parameter
 RETURN
 
+// Affichage de la fenêtre de modification des paramétres
 PROCEDURE DISP_PARAMETERS
-	FIELD PARAM_LAB, PARAM_VAL in parameter
+	FIELD PARAM_LAB, PARAM_VAL, PARAM_DEC, PARAM_TYP in parameter
 	LOCAL time := Date()
 	LOCAL row := 5
 	LOCAL GetList := {}
@@ -62,34 +55,65 @@ PROCEDURE DISP_PARAMETERS
 	LOCAL elem
 	LOCAL validateStatus := .F.
 	
+	SetColor("W+/B+")
 	CLS
+	DispBox(0, 0, nRow - 1, nCol - 1, B_SINGLE, "BG+/B+")
+	@ 0, 30 SAY "PARAMETRAGE" PICTURE "@!"
+	SET CENTURY ON
 	USE PARAM ALIAS parameter
 	variables := Array(LastRec(), 2)
 	DO WHILE .NOT. Eof()
-		variables[recordPtr][1] = PARAM_LAB
-		variables[recordPtr++][2] = PARAM_VAL
+		variables[recordPtr][1] = PARAM_DEC
+		SWITCH PARAM_TYP
+			CASE "D"
+				variables[recordPtr++][2] = CtoD(PARAM_VAL)
+				EXIT
+			CASE "N"
+				variables[recordPtr++][2] = Val(PARAM_VAL)
+				EXIT
+			DEFAULT
+				variables[recordPtr++][2] = PARAM_VAL
+				EXIT
+		END
 		SKIP
 	ENDDO
 	CLOSE parameter
 	
-	DO WHILE Lastkey() <> K_ESC	.AND. Lastkey() <> K_RETURN	
-		FOR EACH elem IN variables
-			@ row, 5 SAY elem[1] GET elem[2]
-			row += 2
-		NEXT
+	FOR EACH elem IN variables
+		IF AllTrim(elem[1]) == "VAT1_CHG_DATE"
+			@ row, 5 SAY elem[1] GET elem[2] PICTURE "99/99/9999"
+		ELSE
+			@ row, 5 SAY elem[1] GET elem[2] PICTURE "99.99"
+		ENDIF
+		row += 2
+	NEXT
 		@ row, 5 SAY "VALIDER" GET validateStatus PICTURE "Y"
-		READ
-	ENDDO
+	READ
+	IF LastKey() == K_ESC
+		RETURN
+	ENDIF
 	
 	IF validateStatus
 		USE PARAM ALIAS parameter NEW
 		FOR EACH elem IN variables
-			LOCATE FOR parameter->PARAM_LAB = AllTrim(elem[1])
+			LOCATE FOR parameter->PARAM_DEC = AllTrim(elem[1])
 			DO WHILE Found()
-				REPLACE parameter->PARAM_VAL WITH elem[2]
+				SWITCH parameter->PARAM_TYP
+					CASE "D"
+						REPLACE parameter->PARAM_VAL WITH DtoC(elem[2])
+						EXIT
+					CASE "N"
+						REPLACE parameter->PARAM_VAL WITH str(elem[2])
+						EXIT
+					DEFAULT
+						REPLACE parameter->PARAM_VAL WITH elem[2]
+						EXIT
+				END
 				CONTINUE
 			ENDDO
 		NEXT
 		CLOSE parameter
+		// On réinitialise la liste des paramétres globaux
+		INIT_GLOBALVAR()
 	ENDIF
 RETURN

@@ -2,6 +2,11 @@
 #include "Inkey.ch"
 
 /* Méthode et fonction en tout genre */
+GLOBAL EXTERN vat1ChangeDate
+GLOBAL EXTERN vat1BeforeChangeDate
+GLOBAL EXTERN vat1AfterChangeDate
+GLOBAL EXTERN vat2Value
+
 
 FUNCTION ENCODE_PRESENTATION_PLAT(aaListePlat)
    LOCAL indice := aaListePlat[1]
@@ -90,6 +95,36 @@ FUNCTION COMPUTE_TVA(somme, tva)
    retVal := Round(somme * pourcent / (1 + pourcent), 2)
 RETURN retVal
 
+/* 
+fonction qui retourne la bonne valeur pour la tva1 en fonction de la date de la facture.
+Si nFact est null alors on prend la date du jour.
+Sinon, on récupère la date de création de la table. 
+*/
+FUNCTION GET_VAT1_BY_FACTURE(nFact)
+	LOCAL testDate := Date()
+	LOCAL retVal := vat1BeforeChangeDate
+	IF nFact <> NIL
+		testDate = GET_DATE_CREATION(nFact)
+	ENDIF
+	IF testDate >= vat1ChangeDate
+		retVal := vat1AfterChangeDate
+	ENDIF
+RETURN retVal
+
+/*
+fonction qui retourne la bonne valeur de la tva1 en fonction de la date
+Si date est null alors on prend la date du jour
+*/
+FUNCTION GET_VAT1_BY_DATE(date)
+	LOCAL testDate := Date()
+	LOCAL retVal := vat1BeforeChangeDate
+	IF date <> NIL
+		testDate := date
+	ENDIF
+	IF testDate >= vat1ChangeDate
+		retVal := vat1AfterChangeDate
+	ENDIF
+RETURN retVal
 
    #xtrans  :data   =>   :cargo\[1]
    #xtrans  :recno  =>   :cargo\[2]
