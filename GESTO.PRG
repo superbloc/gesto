@@ -19,9 +19,10 @@ STATIC nRow := 25
 STATIC nCol := 80
 STATIC listePaiement := {"CBleue", "Cheque", "Especes", "TRestaurant"}
 
-GLOBAL EXTERN vatChangeDate
-GLOBAL EXTERN vatBeforeChangeDate
-GLOBAL EXTERN vatAfterChangeDate
+GLOBAL EXTERN vat1ChangeDate
+GLOBAL EXTERN vat1BeforeChangeDate
+GLOBAL EXTERN vat1AfterChangeDate
+GLOBAL EXTERN vat2Value
 
 PROCEDURE MAIN()
 	LOCAL aaParam := {}
@@ -124,11 +125,10 @@ PROCEDURE DISP_MAIN_WINDOW()
 	CLS
 	DispBox(0, 0, nRow - 1, nCol - 1, B_DOUBLE, "G+/B+")
 	HB_LangSelect("FR")
-	SET CENTURY ON
-	SET DATE TO AMERICAN
-	@ 10, 10 SAY vatChangeDate
-	@ 11, 10 SAY vatBeforeChangeDate
-	@ 12, 10 SAY vatAfterChangeDate
+	@ 10, 10 SAY vat1ChangeDate
+	@ 11, 10 SAY vat1BeforeChangeDate
+	@ 12, 10 SAY vat1AfterChangeDate
+	@ 13, 10 SAY vat2Value
 	DISP_DATE()
 	DISP_TABLE()
 	DISP_HEADER()

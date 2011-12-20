@@ -7,9 +7,10 @@
 
 #include "Inkey.ch"
 
-GLOBAL vatChangeDate
-GLOBAL vatBeforeChangeDate
-GLOBAL vatAfterChangeDate
+GLOBAL vat1ChangeDate
+GLOBAL vat1BeforeChangeDate
+GLOBAL vat1AfterChangeDate
+GLOBAL vat2Value
 
 // A enlever pour intégration dans gesto
 /*
@@ -28,19 +29,24 @@ PROCEDURE INIT_GLOBALVAR
 	USE PARAM NEW ALIAS parameter
 	INDEX ON parameter->PARAM_LAB TO PARAM_INDEX
 
-	DbSeek("VAT_CHG_DATE")
+	DbSeek("VAT1_CHG_DATE")
 	IF Found()
-		vatChangeDate := CtoD(parameter->PARAM_VAL)
+		vat1ChangeDate := CtoD(parameter->PARAM_VAL)
 	ENDIF
 	
-	DbSeek("VAT_BF_CHG_DATE")
+	DbSeek("VAT1_BF_CHG_DATE")
 	IF Found()
-		vatBeforeChangeDate := Val(parameter->PARAM_VAL)
+		vat1BeforeChangeDate := Val(parameter->PARAM_VAL)
 	ENDIF
 	
-	DbSeek("VAT_AF_CHG_DATE")
+	DbSeek("VAT1_AF_CHG_DATE")
 	IF Found()
-		vatAfterChangeDate := Val(parameter->PARAM_VAL)
+		vat1AfterChangeDate := Val(parameter->PARAM_VAL)
+	ENDIF
+	
+	DbSeek("VAT2")
+	IF Found()
+		vat2Value := Val(parameter->PARAM_VAL)
 	ENDIF
 
 	CLOSE parameter
