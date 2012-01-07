@@ -127,12 +127,14 @@ PROCEDURE DISP_MAIN_WINDOW()
 	CLS
 	DispBox(0, 0, nRow - 1, nCol - 1, B_DOUBLE, "G+/B+")
 	HB_LangSelect("FR")
+	/*
 	SET FIXED on
 	@ 10, 10 SAY vat1ChangeDate
 	@ 11, 10 SAY vat1BeforeChangeDate
 	@ 12, 10 SAY vat1AfterChangeDate
 	@ 13, 10 SAY vat2Value
 	@ 14, 10 SAY Date() >= vat1ChangeDate
+	*/
 	DISP_DATE()
 	DISP_TABLE()
 	DISP_HEADER()
@@ -1011,7 +1013,7 @@ PROCEDURE IMPRIME_FICHE(date, nbClient, prix, tva)
 	? doubleStrikeOff
 	? doubleHeightOff
 	//? emphasisOff
-	? "   Dont TVA ", AllTrim(str(tva)), "% :       ", AllTrim(str(Round((prix * tva / 100) / (1 + tva / 100), 2)))
+	? "   Dont TVA ", AllTrim(str(tva, 5, 2)), "% :       ", AllTrim(str(Round((prix * tva / 100) / (1 + tva / 100), 2)))
 	? ""
 	? doubleStrike
 	? "          Restaurant CHINA STAR           "
@@ -1075,7 +1077,7 @@ PROCEDURE SPOOL_FACTURE(nFact, type)
 	LOCAL doubleStrikeOff := Chr(27)+Chr(71)+Chr(0)
 	LOCAL date := GET_DATE_CREATION(nFact)
 	LOCAL remise := GET_TOTAL_REMISE(nFact) > 0
-	LOCAL vat1 := GET_VAT1_BY_DATE(nFact)
+	LOCAL vat1 := GET_VAT1_BY_FACTURE(nFact)
 	gprinter = GetDefaultPrinter()
 	SET PRINTER ON
     SET PRINTER TO &gprinter

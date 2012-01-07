@@ -81,9 +81,9 @@ PROCEDURE DISP_PARAMETERS
 	
 	FOR EACH elem IN variables
 		IF AllTrim(elem[1]) == "VAT1_CHG_DATE"
-			@ row, 5 SAY elem[1] GET elem[2] PICTURE "99/99/9999"
+			@ row, 5 SAY elem[1] GET elem[2] PICTURE "99/99/9999" COLOR "RB/W+"
 		ELSE
-			@ row, 5 SAY elem[1] GET elem[2] PICTURE "99.99"
+			@ row, 5 SAY elem[1] GET elem[2] PICTURE "99.99" COLOR "RB/W+"
 		ENDIF
 		row += 2
 	NEXT
