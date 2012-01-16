@@ -884,12 +884,6 @@ PROCEDURE DISP_RECETTE_TOTAL(date)
 	@ 22, 55 SAY "emporte : " + PadL(ALLTrim(str(GET_TOTAL_RECETTE_EMPORTE(date))), 7) + " }" PICTURE "@!"
 RETURN
 
-/*
-PROCEDURE DISP_BILAN_MOIS_HEADER()
-	@ 0, 0 SAY "   date     cl    total service  emporte tva 5.5%  tva 19.6%  cb   chq  esp   tr" PICTURE "@!"
-RETURN
-*/
-
 PROCEDURE MODIF_RECORD(nFact, record)
 	//LOCAL tab := HB_RegExSplit(" - ", record)
 	LOCAL GetList := {}
@@ -912,7 +906,7 @@ PROCEDURE MODIF_NB_CLIENT(nFact, oldNbClient)
 	@ 10, 10 SAY "nombre clients : " PICTURE "@!" COLOR "R+/B+" GET nbClient PICTURE "99"
 	READ
 	IF nbClient <> oldNbClient
-		UPDATE_LISTE_TABLE_NB_CLIENT(nFact, nbClient)
+		UPDATE_LISTE_TABLE_NB_CLIENT(nFact, nbClient)   // @ref : listeTableFunc.prg
 	ENDIF
 RETURN
 
@@ -927,7 +921,7 @@ FUNCTION MODIF_NUM_TABLE(nFact, nbClient)
 	@ 10, 10 SAY "numero table : " PICTURE "@!" COLOR "R+/B+" GET numTable PICTURE "@!"
 	READ
 	IF numTable <> oldNumTable
-		retUpdateTable := UPDATE_LISTE_TABLE_NUM_TABLE(nFact, numTable)
+		retUpdateTable := UPDATE_LISTE_TABLE_NUM_TABLE(nFact, numTable) // @ref : listeTableFunc.prg
 	ENDIF
 	SWITCH retUpdateTable
 	CASE -1
