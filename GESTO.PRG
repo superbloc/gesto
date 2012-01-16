@@ -19,6 +19,7 @@ REQUEST HB_LANG_FR
 //STATIC nCol := 80
 GLOBAL nRow := 25
 GLOBAL nCol := 80
+GLOBAL aChoiceOffset := 3 // offset à appliquer pour les achoices.
 STATIC listePaiement := {"CBleue", "Cheque", "Especes", "TRestaurant"}
 
 GLOBAL EXTERN vat1ChangeDate
@@ -190,7 +191,8 @@ PROCEDURE VIEW_EDIT_MENU()
 		IF LEN(listePlat) == 0
 			ADD_PLAT()
 		ELSE
-			nSelect := Achoice(1, 7, nRow - 2, nCol - 7, listePlat, {} , "gestion_edition_plat", position)
+			nSelect := Achoice(1, 7, nRow - 2, nCol - 7, listePlat, {} , "gestion_edition_plat", position, aChoiceOffset)
+			position := nSelect
 			SWITCH LastKey()
 				CASE 83    // code ASCII pour 'S'
 				CASE 115   // code ASCII pour 's'
@@ -744,6 +746,7 @@ PROCEDURE VIEW_LISTE_RECETTE_BY_DATE(date)
 	LOCAL retVal
 	LOCAL mapping
 	LOCAL listeRecette
+	LOCAL position := 1
 	DO WHILE LastKey() <> K_ESC
 		CLS
 		DispBox(0, 0, nRow - 1, nCol - 1, B_SINGLE, "BG+/B+")
@@ -758,7 +761,8 @@ PROCEDURE VIEW_LISTE_RECETTE_BY_DATE(date)
 			EXIT
 		ENDIF
 		DISP_RECETTE_TOTAL(date)
-		nSelectFact := Achoice(2, 2, nRow - 9, nCol - 2, listeRecette, {}, "recetteUserFunc")
+		nSelectFact := Achoice(2, 2, nRow - 9, nCol - 2, listeRecette, {}, "recetteUserFunc", position, aChoiceOffset)
+		position := nSelectFact // on stocke la position pour qu'on reste là où on est.
 		SWITCH LastKey()
 			CASE 83      //code ASCII pour "S"
 			CASE 115     //code ASCII pour "s"
