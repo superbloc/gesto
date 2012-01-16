@@ -747,6 +747,7 @@ PROCEDURE VIEW_LISTE_RECETTE_BY_DATE(date)
 	LOCAL mapping
 	LOCAL listeRecette
 	LOCAL position := 1
+	LOCAL deleteConfirm := .F.
 	DO WHILE LastKey() <> K_ESC
 		CLS
 		DispBox(0, 0, nRow - 1, nCol - 1, B_SINGLE, "BG+/B+")
@@ -766,8 +767,11 @@ PROCEDURE VIEW_LISTE_RECETTE_BY_DATE(date)
 		SWITCH LastKey()
 			CASE 83      //code ASCII pour "S"
 			CASE 115     //code ASCII pour "s"
-				DELETE_RECETTE(mapping[nSelectFact])   // supprime la recette de la facture 
-				DELETING_MULTI_RECORD(mapping[nSelectFact])   // supprime tous les plats de la facture 
+				deleteConfirm := CONFIRM_BOX("Suppresion de la table " + GET_NUM_TABLE(mapping[nSelectFact]) + " ?")
+				IF deleteConfirm
+					DELETE_RECETTE(mapping[nSelectFact])   // supprime la recette de la facture 
+					DELETING_MULTI_RECORD(mapping[nSelectFact])   // supprime tous les plats de la facture 
+				ENDIF
 				KEYBOARD Chr(255)
 				Inkey()
 				EXIT
@@ -795,6 +799,18 @@ RETURN
 PROCEDURE DISP_RECETTE_TITLE_HEADER()
 	@ 1, 2 SAY "   #  tbl clt       cb          chq           esp           tr           total" PICTURE "@!"
 RETURN
+
+FUNCTION CONFIRM_BOX(message)
+	LOCAL getList := {}
+	LOCAL confirm := .F.
+	LOCAL oldColor
+	oldColor := SetColor("B+/GB+")
+	@ 10, 20 CLEAR TO 15, 60
+	DispBox(10, 20, 15, 60, B_SINGLE, "R+/GB+")
+	@ 12, 25 SAY message PICTURE "@!" GET confirm PICTURE "Y" 
+ 	READ
+	SetColor(oldColor)
+RETURN confirm
 
 PROCEDURE CLOTURER(date)
 	LOCAL nbClient := GET_NB_CLIENT_RECETTE(date)
