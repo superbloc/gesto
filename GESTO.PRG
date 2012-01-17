@@ -804,11 +804,24 @@ FUNCTION CONFIRM_BOX(message)
 	LOCAL getList := {}
 	LOCAL confirm := .F.
 	LOCAL oldColor
+	LOCAL validateBtn := .F.
+	LOCAL cancelBtn := .F.
+	LOCAL btnColor := "N+/WN+,G+/R+,B+/R+,GR+/R+"
 	oldColor := SetColor("B+/GB+")
 	@ 10, 20 CLEAR TO 15, 60
 	DispBox(10, 20, 15, 60, B_SINGLE, "R+/GB+")
-	@ 12, 25 SAY message PICTURE "@!" GET confirm PICTURE "Y" 
- 	READ
+ 	@ 11, 21 SAY Center(message, 39, Chr(32), .T.) PICTURE "@!"
+	@ 13, 45 GET cancelBtn PUSHBUTTON ;
+		CAPTION "non" ;
+		COLOR btnColor ;
+		STATE {|| confirm := .F., ReadKill(.T.) };
+		STYLE "[]"
+	@ 13, 30 GET validateBtn PUSHBUTTON ;
+		CAPTION "oui" ;
+		COLOR btnColor ;
+		STATE {|| confirm := .T., ReadKill(.T.) } ;
+		STYLE "[]"
+	READ
 	SetColor(oldColor)
 RETURN confirm
 
