@@ -117,8 +117,6 @@ PROCEDURE DISP_RECAP_BILAN(annee, mois)
    LOCAL vat1 := GET_VAT1_BY_DATE(date)
    LOCAL total := GET_TOTAL_FIELD_BILAN(annee, mois, TOTAL)
    LOCAL nbClient := GET_TOTAL_FIELD_BILAN(annee, mois, NB_CLIENT)
-   //LOCAL tva1 := GET_TOTAL_FIELD_BILAN(annee, mois, TVA1)
-   //LOCAL tva2 := GET_TOTAL_FIELD_BILAN(annee, mois, TVA2)
    LOCAL tva1 := COMPUTE_TVA(GET_TOTAL_FIELD_BILAN(annee, mois, ST_55), vat1)
    LOCAL tva2 := COMPUTE_TVA(GEt_TOTAL_FIELD_BILAN(annee, mois, ST_196), vat2Value)
    LOCAL service := GET_TOTAL_FIELD_BILAN(annee, mois, SERVICE)
@@ -133,8 +131,6 @@ PROCEDURE DISP_RECAP_BILAN(annee, mois)
    @ 19, 43 SAY esp PICTURE "@!R esp : 999999.99"
    @ 19, 63 SAY tr PICTURE "@!R tr : 999999.99"
    @ 21, 3 SAY nbClient PICTURE "@!R nb clts : 999999"
-   //@ 21, 23 SAY "tva 5.5 % : " + AllTrim(str(tva1)) PICTURE "@!"
-   //@ 21, 53 SAY "tva 19.6 % : " + AllTrim(str(tva2)) PICTURE "@!"
    @ 21, 23 SAY "tva " + str(vat1, 5, 2) + " % : " + AllTrim(str(tva1)) PICTURE "@!"
    @ 21, 53 SAY "tva " + str(vat2Value, 5, 2) + " % : " + AllTrim(str(tva2)) PICTURE "@!"
    @ 23, 3 SAY total PICTURE "@!R total : 999999.99"
@@ -148,8 +144,6 @@ PROCEDURE PRINT_BILAN(annee, mois)
    LOCAL vat1 := GET_VAT1_BY_DATE(date)
    LOCAL total := GET_TOTAL_FIELD_BILAN(annee, mois, TOTAL)
    LOCAL nbClient := GET_TOTAL_FIELD_BILAN(annee, mois, NB_CLIENT)
-   //LOCAL tva1 := GET_TOTAL_FIELD_BILAN(annee, mois, TVA1)
-   //LOCAL tva2 := GET_TOTAL_FIELD_BILAN(annee, mois, TVA2)
    LOCAL st_55 := GET_TOTAL_FIELD_BILAN(annee, mois, ST_55)
    LOCAL st_196 := GET_TOTAL_FIELD_BILAN(annee, mois, ST_196)
    LOCAL tva1 := COMPUTE_TVA(GET_TOTAL_FIELD_BILAN(annee, mois, ST_55), vat1)
@@ -179,7 +173,6 @@ PROCEDURE PRINT_BILAN(annee, mois)
    ? init
    ? " La recette de : " + AllTrim(str(mois)) + "/" + AllTrim(str(annee))
    ? "------------------------------------------"
-   //? "Date   NbClt     Total   St_55    St_196  "
    ? "Date   NbClt     Total   St_" + str(vat1 * 10, 2, 0) + "    St_" + str(vat2Value * 10, 3, 0) + "  "
    ? "------------------------------------------"
    FOR itr := 1 TO LEN(data)
@@ -190,13 +183,11 @@ PROCEDURE PRINT_BILAN(annee, mois)
    
    ? "------------------------------------------"
    ? "  NbClient:" + AllTrim(str(nbClient)) +           "    TOTAL:" + PadL(AllTrim(str(total)), 10)
-   //? "{   St_55:" + PadL(AllTrim(str(st_55)), 10) +    "   St_196:" + PadL(AllTrim(str(st_196)), 10) + " }"
    ? "{   St_" + str(vat1*10, 2, 0) + ":" + PadL(AllTrim(str(st_55)), 10) +    "   St_" + str(vat2Value*10, 3, 0) + ":" + PadL(AllTrim(str(st_196)), 10) + " }"
    ? "{      CB:" + PadL(AllTrim(str(cb)), 10) +        "       CQ:" + PadL(AllTrim(str(chq)), 10) + " }"
    ? "{      ES:" + PadL(AllTrim(str(esp)), 10) +     "       TR:" + PadL(AllTrim(str(tr)), 10) + " }"
    ?
    ? "TOTAL TVA:" + PadL(AllTrim(str(tva1 + tva2)), 10)
-   //? "{   5.50%:" + PadL(AllTrim(str(tva1)), 10) +    "   19.60%:" + PadL(AllTrim(str(tva2)), 10) + " }"
    ? "{  " + str(vat1, 5, 2) + "%:" + PadL(AllTrim(str(tva1)), 10) +    "   " + str(vat2Value, 5, 2) + "%:" + PadL(AllTrim(str(tva2)), 10) + " }"
    ? "------------------------------------------"
    ? cutting
