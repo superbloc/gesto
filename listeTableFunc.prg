@@ -77,26 +77,11 @@ FUNCTION GET_NB_CLIENT(nFact)
 	ENDIF
 RETURN retValue
 
-/*
-	Fonction qui change le numéro de table dans la listeTable
+/* 
+Fonction de mise à jour du numéro de table .
+Cette modification intervient aussi bien dans la table listeTable que dans la table RECETTEJ (recette journalière).
+Cependant, lorsque la table est encore présente dans la table listeTable, on s'assure que la nouvelle table ne doit pas exister.
 */
-/*
-FUNCTION UPDATE_LISTE_TABLE_NUM_TABLE(nFact, numTable)
-	//IF oldNumTable == numTable
-	//	RETURN -1
-	//ENDIF
-	USE ListeTable ALIAS listeTable
-	//INDEX ON listeTable->nfact TO listeTable
-	//DbSeek(PadR(AllTrim(numTable), 3))
-	//IF Found()
-	//	RETURN -1
-	//ENDIF
-	REPLACE listeTable->num_table WITH numTable FOR listeTable->nFact == nFact
-	CLOSE listeTable
-	UPDATE_CONTENT_TABLE_NUM_TABLE(nFact, numTable)
-RETURN 0
-*/
-
 FUNCTION UPDATE_LISTE_TABLE_NUM_TABLE(nFact, numTable)
 	USE ListeTable ALIAS listeTable
 	INDEX ON listeTable->nFact TO listeTable
@@ -106,6 +91,9 @@ FUNCTION UPDATE_LISTE_TABLE_NUM_TABLE(nFact, numTable)
 	ENDIF
 	REPLACE listeTable->num_table WITH numTable FOR listeTable->nfact == nFact
 	CLOSE listeTable
+	USE RECETTEJ ALIAS recette
+	REPLACE recette->num_table WITH numTable FOR recette->nfact == nFact
+	CLOSE recette
 	UPDATE_CONTENT_TABLE_NUM_TABLE(nFact, numTable)
 RETURN 0
 

@@ -70,25 +70,6 @@ FUNCTION GET_TVA_1(date)
 	LOCAL status
 	USE RECETTEJ ALIAS recette NEW
 	SUM Round(GET_TOTAL_55(recette->nfact) - GET_TOTAL_REMISE_55(recette->nFact), 2) TO total FOR recette->date == date
-	/***** old _code ****/
-	/*
-	LOCATE FOR recette->date = date
-	DO WHILE Found()
-		status := recette->status
-		SWITCH status
-			case "E"
-				//total := total + GET_TOTAL(recette->nfact)
-				total := total + Round(GET_TOTAL(recette->nFact) - GET_TOTAL_REMISE(recette->nFact), 2)
-				EXIT
-			case "S"
-				//total := total + GET_TOTAL_55(recette->nfact)
-				total := total + Round(GET_TOTAL_55(recette->nFact) - GET_TOTAL_REMISE_55(recette->nFact), 2)
-				EXIT
-		END
-		Select("recette")
-		CONTINUE
-	ENDDO */
-	/********************/
 	CLOSE recette
 RETURN total
 
@@ -99,23 +80,6 @@ FUNCTION GET_TVA_2(date)
 	LOCAL status
 	USE RECETTEJ ALIAS recette NEW
 	SUM Round(GET_TOTAL_196(recette->nfact) - GET_TOTAL_REMISE_196(recette->nFact), 2) TO total FOR recette->date == date
-	/********* old_code **************/
-	/*
-	LOCATE FOR recette->date = date
-	DO WHILE Found()
-		status := recette->status
-		SWITCH status
-			case "E"
-				EXIT
-			case "S"
-				//total := total + GET_TOTAL_196(recette->nfact)
-				total := total + Round(GET_TOTAL_196(recette->nFact) - GET_TOTAL_REMISE_196(recette->nFact), 2)
-				EXIT
-		END
-		Select("recette")
-		CONTINUE
-	ENDDO */
-	/**************************/
 	CLOSE recette
 RETURN total
 /****************************************************/

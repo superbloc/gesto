@@ -15,10 +15,9 @@ REQUEST HB_LANG_FR
 #define SIRET 44153813200013
 #define DEFAUT_REMISE 10
 
-//STATIC nRow := 25
-//STATIC nCol := 80
 GLOBAL nRow := 25
 GLOBAL nCol := 80
+GLOBAL aChoiceOffset := 3 // offset à appliquer pour les achoices.
 STATIC listePaiement := {"CBleue", "Cheque", "Especes", "TRestaurant"}
 
 GLOBAL EXTERN vat1ChangeDate
@@ -127,14 +126,6 @@ PROCEDURE DISP_MAIN_WINDOW()
 	CLS
 	DispBox(0, 0, nRow - 1, nCol - 1, B_DOUBLE, "G+/B+")
 	HB_LangSelect("FR")
-	/*
-	SET FIXED on
-	@ 10, 10 SAY vat1ChangeDate
-	@ 11, 10 SAY vat1BeforeChangeDate
-	@ 12, 10 SAY vat1AfterChangeDate
-	@ 13, 10 SAY vat2Value
-	@ 14, 10 SAY Date() >= vat1ChangeDate
-	*/
 	DISP_DATE()
 	DISP_TABLE()
 	DISP_HEADER()
@@ -190,7 +181,8 @@ PROCEDURE VIEW_EDIT_MENU()
 		IF LEN(listePlat) == 0
 			ADD_PLAT()
 		ELSE
-			nSelect := Achoice(1, 7, nRow - 2, nCol - 7, listePlat, {} , "gestion_edition_plat", position)
+			nSelect := Achoice(1, 7, nRow - 2, nCol - 7, listePlat, {} , "gestion_edition_plat", position, aChoiceOffset)
+			position := nSelect
 			SWITCH LastKey()
 				CASE 83    // code ASCII pour 'S'
 				CASE 115   // code ASCII pour 's'
@@ -358,8 +350,6 @@ PROCEDURE DISP_ENCAISSEMENT_WINDOW
 	@ 9, 20 CLEAR TO 15, 60
 	DispBox(9, 20, 15, 60, B_DOUBLE, "BG+/RG")
 	@ 9, 25 SAY "appuyez sur ESC pour annuler" PICTURE "@!" COLOR "W/RG"
-	//@ 8, 15 CLEAR TO 12, 60
-	//DispBox(8, 15, 12, 60, B_SINGLE, "G+/B+")
 	@ 12, 25 SAY "encaissement table : " PICTURE "@!" GET numTable PICTURE "@!"
 	READ
 	IF TEST_EXISTENCE_TABLE(numTable)
@@ -453,7 +443,6 @@ FUNCTION CHECK_REGLEMENT(totalCarteBleue, totalCheque, totalEspece, totalTicketR
 	LOCAL cumul := totalCarteBleue + totalCheque + totalEspece + totalTicketResto
 	LOCAL dispSomme := restantAregler - cumul
 	LOCAL quit := dispSomme <= 0
-	//@ 22, 20 SAY "somme a regler : " + str(dispSomme) PICTURE "@!"
 RETURN quit
 
 
@@ -600,7 +589,6 @@ PROCEDURE VIEW_TABLE(nFact)
 	LOCAL totalRemise
 	LOCAL realNumTable := GET_NUM_TABLE(nFact)
 	LOCAL vat1 := GET_VAT1_BY_FACTURE(nFact)
-	//LOCAL defaultRemise := 10
 	LOCAL exitCondition := (GET_NB_PLAT(nFact) == 0)
 	DO WHILE LastKey() <> K_ESC .AND. .NOT. exitCondition
 		nbClient := GET_NB_CLIENT(nFact)
@@ -610,7 +598,6 @@ PROCEDURE VIEW_TABLE(nFact)
 		total := totalBoisson + totalPlat
 		totalRemise := Round(GET_TOTAL_REMISE(nFact), 2)
 		tauRemise := GET_TAUX(nFact)
-		//dispTotal := Round(total * (tauRemise / 100), 2)
 		dispTotal := Round(total - totalRemise, 2)
 		index := 1
 		beginRow := 3
@@ -627,20 +614,11 @@ PROCEDURE VIEW_TABLE(nFact)
 		@1, 20 SAY "nb client : " + str(nbClient) PICTURE "@!" COLOR "R+/B+"
 		@1, 50 SAY "total : " + str(dispTotal) PICTURE "@!" COLOR "R+/B+"
 		
-		// Ne plus afficher la TVA directement dans le code 
-		//@2, 1 SAY "tva 19.6% : " PICTURE "@!" COLOR "R+/B+"
-		
 		@2, 1 SAY "tva " + str(vat2Value, 5, 2) + "% : " PICTURE "@!" COLOR "R+/B+"
-		//@2, 12 SAY Round(totalBoisson * (tauRemise / 100) * 0.196 / 1.196, 2) PICTURE "999.99"
 		@2, 12 SAY COMPUTE_TVA(totalBoisson, vat2Value) PICTURE "999.99"
-		
-		// Ne plus afficher la TVA directement dans le code
-		//@2, 20 SAY "tva 5.5% : " PICTURE "@!" COLOR "R+/B+"
 		
 		@2, 20 SAY "tva " + str(vat1, 5, 2) + "% :" PICTURE "@!" COLOR "R+/B+"
 		@2, 30 SAY COMPUTE_TVA(totalPlat, vat1) PICTURE "999.99"
-		//@2, 30 SAY Round(totalPlat * (tauRemise / 100) * 0.055 / 1.055, 2) PICTURE "999.99"
-		//@2, 45 SAY "tau remise : " + str(100 - tauRemise) + "%" PICTURE "@!" COLOR "R+/B+"
 		@2, 45 SAY "remise : " + AllTrim(str(totalRemise)) PICTURE "@!" COLOR "R+/B+"
 		nSelectPlat := Achoice(beginRow + 1, 6, 20, 75, platListe, {}, "USERFUNC")
 		SWITCH LastKey()
@@ -680,7 +658,6 @@ PROCEDURE VIEW_TABLE(nFact)
 				EXIT
 			CASE 70   // code ASCII pour 'F'
 			CASE 102  // code ASCII pour 'f'
-				//IMPRIME_FICHE(GET_DATE_CREATION(nFact), nbClient, dispTotal, 5.5)
 				// on imprime toujours la fiche sur la base de la tva1
 				IMPRIME_FICHE(GET_DATE_CREATION(nFact), nbClient, dispTotal, vat1)
 				KEYBOARD Chr(255)  // Pour que le ESC de l'annulation ne soit pas intercepté par la boucle principale
@@ -744,6 +721,8 @@ PROCEDURE VIEW_LISTE_RECETTE_BY_DATE(date)
 	LOCAL retVal
 	LOCAL mapping
 	LOCAL listeRecette
+	LOCAL position := 1
+	LOCAL deleteConfirm := .F.
 	DO WHILE LastKey() <> K_ESC
 		CLS
 		DispBox(0, 0, nRow - 1, nCol - 1, B_SINGLE, "BG+/B+")
@@ -758,12 +737,16 @@ PROCEDURE VIEW_LISTE_RECETTE_BY_DATE(date)
 			EXIT
 		ENDIF
 		DISP_RECETTE_TOTAL(date)
-		nSelectFact := Achoice(2, 2, nRow - 9, nCol - 2, listeRecette, {}, "recetteUserFunc")
+		nSelectFact := Achoice(2, 2, nRow - 9, nCol - 2, listeRecette, {}, "recetteUserFunc", position, aChoiceOffset)
+		position := nSelectFact // on stocke la position pour qu'on reste là où on est.
 		SWITCH LastKey()
 			CASE 83      //code ASCII pour "S"
 			CASE 115     //code ASCII pour "s"
-				DELETE_RECETTE(mapping[nSelectFact])   // supprime la recette de la facture 
-				DELETING_MULTI_RECORD(mapping[nSelectFact])   // supprime tous les plats de la facture 
+				deleteConfirm := CONFIRM_BOX("Suppresion de la table " + GET_NUM_TABLE(mapping[nSelectFact]) + " ?")
+				IF deleteConfirm
+					DELETE_RECETTE(mapping[nSelectFact])   // supprime la recette de la facture 
+					DELETING_MULTI_RECORD(mapping[nSelectFact])   // supprime tous les plats de la facture 
+				ENDIF
 				KEYBOARD Chr(255)
 				Inkey()
 				EXIT
@@ -792,13 +775,36 @@ PROCEDURE DISP_RECETTE_TITLE_HEADER()
 	@ 1, 2 SAY "   #  tbl clt       cb          chq           esp           tr           total" PICTURE "@!"
 RETURN
 
+FUNCTION CONFIRM_BOX(message)
+	LOCAL getList := {}
+	LOCAL confirm := .F.
+	LOCAL oldColor
+	LOCAL validateBtn := .F.
+	LOCAL cancelBtn := .F.
+	LOCAL btnColor := "N+/WN+,G+/R+,B+/R+,GR+/R+"
+	oldColor := SetColor("B+/GB+")
+	@ 10, 20 CLEAR TO 15, 60
+	DispBox(10, 20, 15, 60, B_SINGLE, "R+/GB+")
+ 	@ 11, 21 SAY Center(message, 39, Chr(32), .T.) PICTURE "@!"
+	@ 13, 45 GET cancelBtn PUSHBUTTON ;
+		CAPTION "non" ;
+		COLOR btnColor ;
+		STATE {|| confirm := .F., ReadKill(.T.) };
+		STYLE "[]"
+	@ 13, 30 GET validateBtn PUSHBUTTON ;
+		CAPTION "oui" ;
+		COLOR btnColor ;
+		STATE {|| confirm := .T., ReadKill(.T.) } ;
+		STYLE "[]"
+	READ
+	SetColor(oldColor)
+RETURN confirm
+
 PROCEDURE CLOTURER(date)
 	LOCAL nbClient := GET_NB_CLIENT_RECETTE(date)
 	LOCAL total := GET_TOTAL_RECETTE(date)
 	LOCAL st_55 := GET_TVA_1(date)
 	LOCAL st_196 := GET_TVA_2(date)
-	//LOCAL tva1 := COMPUTE_TVA(GET_TVA_1(date), 5.5)
-	//LOCAL tva2 := COMPUTE_TVA(GET_TVA_2(date), 19.6)
 	LOCAL tva1 := COMPUTE_TVA(GET_TVA_1(date), GET_VAT1_BY_DATE(date))
 	LOCAL tva2 := COMPUTE_TVA(GET_TVA_2(date), vat2Value)
 	LOCAL service := GET_TOTAL_RECETTE_SERVICE(date)
@@ -816,8 +822,6 @@ PROCEDURE CLOTURER(date)
 	@ 8, 8 SAY "total : " PICTURE "@!" GET total PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
 	@ 9, 8 SAY "service : " PICTURE "@!" GET service PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
 	@ 10, 8 SAY "emporte : " PICTURE "@!" GET emporte PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
-	//@ 11, 8 SAY "ST tva 5.5% : " PICTURE "@!" GET st_55 PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
-	//@ 12, 8 SAY "ST tva 19.6% : " PICTURE "@!" GET st_196 PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
 	@ 11, 8 SAY "ST tva " + str(GET_VAT1_BY_DATE(date), 5, 2) + "% : " PICTURE "@!" GET st_55 PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
 	@ 12, 8 SAY "ST tva " + str(vat2Value, 5, 2) + "% : " PICTURE "@!" GET st_196 PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
 	@ 13, 8 SAY "carte bleue : " PICTURE "@!" GET cb PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
@@ -884,14 +888,7 @@ PROCEDURE DISP_RECETTE_TOTAL(date)
 	@ 22, 55 SAY "emporte : " + PadL(ALLTrim(str(GET_TOTAL_RECETTE_EMPORTE(date))), 7) + " }" PICTURE "@!"
 RETURN
 
-/*
-PROCEDURE DISP_BILAN_MOIS_HEADER()
-	@ 0, 0 SAY "   date     cl    total service  emporte tva 5.5%  tva 19.6%  cb   chq  esp   tr" PICTURE "@!"
-RETURN
-*/
-
 PROCEDURE MODIF_RECORD(nFact, record)
-	//LOCAL tab := HB_RegExSplit(" - ", record)
 	LOCAL GetList := {}
 	LOCAL codePlat := DECODE_GET_CODE_PLAT(record)
 	LOCAL quantite := DECODE_GET_QUANTITE(record)
@@ -912,7 +909,7 @@ PROCEDURE MODIF_NB_CLIENT(nFact, oldNbClient)
 	@ 10, 10 SAY "nombre clients : " PICTURE "@!" COLOR "R+/B+" GET nbClient PICTURE "99"
 	READ
 	IF nbClient <> oldNbClient
-		UPDATE_LISTE_TABLE_NB_CLIENT(nFact, nbClient)
+		UPDATE_LISTE_TABLE_NB_CLIENT(nFact, nbClient)   // @ref : listeTableFunc.prg
 	ENDIF
 RETURN
 
@@ -927,7 +924,7 @@ FUNCTION MODIF_NUM_TABLE(nFact, nbClient)
 	@ 10, 10 SAY "numero table : " PICTURE "@!" COLOR "R+/B+" GET numTable PICTURE "@!"
 	READ
 	IF numTable <> oldNumTable
-		retUpdateTable := UPDATE_LISTE_TABLE_NUM_TABLE(nFact, numTable)
+		retUpdateTable := UPDATE_LISTE_TABLE_NUM_TABLE(nFact, numTable) // @ref : listeTableFunc.prg
 	ENDIF
 	SWITCH retUpdateTable
 	CASE -1
@@ -992,11 +989,9 @@ PROCEDURE IMPRIME_FICHE(date, nbClient, prix, tva)
     SET PRINTER TO &gprinter
 	SET CONSOLE OFF
 	? init
-	//? emphasis
 	? doubleStrike
 	? doubleHeight
 	? "        Restaurant CHINA STAR             "
-	//? emphasisOff
 	? doubleHeightOff
 	? doubleStrikeOff
 	? "        65 bis, Rue Henri Laroche         "
@@ -1008,11 +1003,9 @@ PROCEDURE IMPRIME_FICHE(date, nbClient, prix, tva)
 	? "         ", AllTrim(str(nbClient)), " REPAS Complet(s)"
 	? doubleStrike
 	? doubleHeight
-	//? emphasis
 	? "*** TOTAL                     " + PadL(AllTrim(str(Round(prix, 2))), 7)
 	? doubleStrikeOff
 	? doubleHeightOff
-	//? emphasisOff
 	? "   Dont TVA ", AllTrim(str(tva, 5, 2)), "% :       ", AllTrim(str(Round((prix * tva / 100) / (1 + tva / 100), 2)))
 	? ""
 	? doubleStrike
@@ -1109,23 +1102,8 @@ PROCEDURE SPOOL_FACTURE(nFact, type)
 	? " Total net :                  " + PadL(AllTrim(str(Round(GET_TOTAL(nFact) - GET_TOTAL_REMISE(nFact), 2))), 7)
 	ENDIF
 	? ""
-	/********** Modification du 27/11/2009 : changement TVA Emporter à 19.6 *****************/
-	//? "       Dont TVA   5.50% : " + PadL(AllTrim(str(Round(((GET_TOTAL_55(nFact) - GET_TOTAL_REMISE_55(nFact)) * 0.055)/1.055, 2))), 7)
-	//? "       Dont TVA  19.60% : " + PadL(AllTrim(str(Round(((GET_TOTAL_196(nFact) - GET_TOTAL_REMISE_196(nFact)) * 0.196)/1.196, 2))), 7)
-	
-	/***************** Modification du 20/12/2011 : variabiliser les tva en fonction du paramétrage et de la date *************************/
 	? "         Dont TVA  " + str(vat1, 5, 2) + "% : " + str(COMPUTE_TVA(GET_TOTAL_55(nFact) - GET_TOTAL_REMISE_55(nFact), vat1), 7, 2)
 	? "         Dont TVA  " + str(vat2Value, 5, 2) + "% : " + str(COMPUTE_TVA(GET_TOTAL_196(nFact) - GET_TOTAL_REMISE_196(nFact), vat2Value), 7, 2)
-	/**************** old code *****************************************/
-	/*
-	IF type == "S" 
-	? "       Dont TVA   5.50% : " + PadL(AllTrim(str(Round(((GET_TOTAL_55(nFact) - GET_TOTAL_REMISE_55(nFact)) * 0.055)/1.055, 2))), 7)
-	? "       Dont TVA  19.60% : " + PadL(AllTrim(str(Round(((GET_TOTAL_196(nFact) - GET_TOTAL_REMISE_196(nFact)) * 0.196)/1.196, 2))), 7)
-	ELSEIF type == "E"
-	? "       Dont TVA   5.50% : " + PadL(AllTrim(str(Round(((GET_TOTAL(nFact) - GET_TOTAL_REMISE(nFact)) * 0.055)/1.055, 2))), 7)
-	ENDIF
-	*/
-	/*****************************************************************************************/
 	? doubleStrike
 	? doubleHeight
 	? emphasis
@@ -1181,11 +1159,9 @@ PROCEDURE ADD_MENU_TO_TABLE(nFact, numTable, nbClient)
 		ELSE
 			IF codePlat == space(4)
 				EXIT
-				//CLOSE menu
 			ENDIF
 			@ beginRow, beginCol + 5 SAY "code inexistant" PICTURE "@!"
 		ENDIF
-		//CLOSE menu
 	ENDDO
 	CHECK_NFACT(nFact)
 	USE

@@ -241,7 +241,6 @@ FUNCTION GET_LISTE_PLAT(nFact)
 	//SUM menu->prix * contenu->quantite TO totalPlat FOR contenu->num_table == numTable .AND. menu->categorie == "P" .AND. contenu->offert == 0
 	LOCATE FOR contenu->nfact == nFact
 	DO WHILE Found()
-		//total += menu->prix * contenu->quantite
 		SWITCH menu->categorie
 		CASE "B"
 			IF contenu->offert == 0
