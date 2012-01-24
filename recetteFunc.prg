@@ -6,7 +6,7 @@ FUNCTION GET_LISTE_RECETTE(date)
 	USE RECETTEJ ALIAS recette NEW
 	LOCATE FOR recette->date == date
 	DO WHILE Found()
-		str := MAKE_RECETTE_RECORD({itr++, recette->num_table, recette->nb_client, recette->cb, recette->chq, recette->esp, recette->tr, recette->total})
+		str := MAKE_RECETTE_RECORD({itr++, recette->num_table, recette->nb_client, recette->cb, recette->chq, recette->esp, recette->tr, recette->total, recette->tic_print})
 		AAdd(recetteListe, Upper(str))
 		AAdd(mapping, recette->nfact)
 		CONTINUE
@@ -31,6 +31,9 @@ FUNCTION MAKE_RECETTE_RECORD(aaListe)
 					PadL(AllTrim(str(esp)), 12) + " "+;
 					PadL(AllTrim(str(tr)), 12) + " "+;
 					PadL(AllTrim(str(total)), 12)
+	IF aaListe[9] == 0
+		output := "*" + output
+	ENDIF
 RETURN output
 
 /* Méthode qui supprime une facture particulière */
