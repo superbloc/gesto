@@ -23,7 +23,7 @@ PROCEDURE MAIN
 				recette->ESP WITH recetteOld->ESP, ;
 				recette->TR WITH recetteOld->TR, ;
 				recette->STATUS WITH recetteOld->STATUS, ;
-				recette->TIC_PRINT WITH 0
+				recette->TIC_PRINT WITH 1
 		SKIP
 	ENDDO
 	CLOSE recette
