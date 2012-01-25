@@ -37,6 +37,7 @@ PROCEDURE MAIN()
 	INIT_GLOBALVAR()         // initialisation des variables globales des paramétres.
 	KEYBOARD Chr(255)        // pour que la première fois qu'on entre dans l'appli, on applique une réactualisation de l'écran
 	Inkey()
+	? "TestPrint"
 	DO WHILE LastKey() <> 81 .AND. LastKey() <> 113
 		actualisation := .T.
 		SWITCH LastKey()
