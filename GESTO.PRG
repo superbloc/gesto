@@ -6,14 +6,14 @@
 REQUEST HB_LANG_FR
 
 /* Déclaration des constantes pour paramétrer les infos concernant le restaurant */
-#define SOCIETE "restaurant"
-#define NOM_SOCIETE "china star"
-#define ADR "65, rue henri laroche"
-#define CODE_POSTAL "60800"
-#define VILLE "crepy-en-valois"
-#define TEL 0344941888
-#define SIRET 44153813200013
-#define DEFAUT_REMISE 10
+GLOBAL SOCIETE := "restaurant"
+GLOBAL NOM_SOCIETE := "china star"
+GLOBAL ADR := "65, rue henri laroche"
+GLOBAL CODE_POSTAL := "60800"
+GLOBAL VILLE := "crepy-en-valois"
+GLOBAL TEL := 0344941888
+GLOBAL SIRET := 44153813200013
+GLOBAL DEFAUT_REMISE := 10
 
 GLOBAL nRow := 25
 GLOBAL nCol := 80
@@ -37,7 +37,6 @@ PROCEDURE MAIN()
 	INIT_GLOBALVAR()         // initialisation des variables globales des paramétres.
 	KEYBOARD Chr(255)        // pour que la première fois qu'on entre dans l'appli, on applique une réactualisation de l'écran
 	Inkey()
-	? "TestPrint"
 	DO WHILE LastKey() <> 81 .AND. LastKey() <> 113
 		actualisation := .T.
 		SWITCH LastKey()
@@ -575,7 +574,7 @@ PROCEDURE DISP_FICHE_INFO_WINDOW()
 	@ 12, 15 SAY "nb client : " PICTURE "@!" COLOR "RB+/B+" GET nbClient PICTURE "999" RANGE 0, 100
 	@ 14, 15 SAY "prix : " PICTURE "@!" COLOR "RB+/B+" GET prix PICTURE "9999.99" RANGE 0, 1000
 	READ
-	IMPRIME_FICHE(date, nbClient, prix, GET_VAT1_BY_DATE(date))
+	PRINT_FICHE(date, nbClient, prix, COMPUTE_TVA(prix, GET_VAT1_BY_DATE(date)))
 RETURN 
 
 PROCEDURE VIEW_TABLE(nFact)
@@ -593,6 +592,7 @@ PROCEDURE VIEW_TABLE(nFact)
 	LOCAL realNumTable := GET_NUM_TABLE(nFact)
 	LOCAL vat1 := GET_VAT1_BY_FACTURE(nFact)
 	LOCAL exitCondition := (GET_NB_PLAT(nFact) == 0)
+	LOCAL position := 1
 	DO WHILE LastKey() <> K_ESC .AND. .NOT. exitCondition
 		nbClient := GET_NB_CLIENT(nFact)
 		platListe := GET_LISTE_PLAT(nFact)
@@ -623,7 +623,8 @@ PROCEDURE VIEW_TABLE(nFact)
 		@2, 20 SAY "tva " + str(vat1, 5, 2) + "% :" PICTURE "@!" COLOR "R+/B+"
 		@2, 30 SAY COMPUTE_TVA(totalPlat, vat1) PICTURE "999.99"
 		@2, 45 SAY "remise : " + AllTrim(str(totalRemise)) PICTURE "@!" COLOR "R+/B+"
-		nSelectPlat := Achoice(beginRow + 1, 6, 20, 75, platListe, {}, "USERFUNC")
+		nSelectPlat := Achoice(beginRow + 1, 6, 20, 75, platListe, {}, "USERFUNC", position, aChoiceOffset)
+		position := nSelectPlat
 		SWITCH LastKey()
 			CASE 83    // code ASCII pour 'S'
 			CASE 115   // code ASCII pour 's'
@@ -662,7 +663,8 @@ PROCEDURE VIEW_TABLE(nFact)
 			CASE 70   // code ASCII pour 'F'
 			CASE 102  // code ASCII pour 'f'
 				// on imprime toujours la fiche sur la base de la tva1
-				IMPRIME_FICHE(GET_DATE_CREATION(nFact), nbClient, dispTotal, vat1)
+				//IMPRIME_FICHE(GET_DATE_CREATION(nFact), nbClient, dispTotal, vat1)
+				PRINT_FICHE(GET_DATE_CREATION(nFact), nbClient, dispTotal, COMPUTE_TVA(totalPlat, vat1), COMPUTE_TVA(totalBoisson, vat2Value))
 				KEYBOARD Chr(255)  // Pour que le ESC de l'annulation ne soit pas intercepté par la boucle principale
 				Inkey()
 				EXIT
@@ -980,6 +982,7 @@ PROCEDURE DISP_BILAN_ANNEE_MOIS_ENTRY_WINDOW()
 	DISP_BILAN_ANNEE_MOIS(annee)
 RETURN
 
+/*
 /******* Méthode d'impression de fiche ********/
 // REMARQUE : étant donnée qu'à chaque fois, on l'utilise avec la tva1, envisager peut-être de l'intégrer directement dans le corps de la méthode.
 PROCEDURE IMPRIME_FICHE(date, nbClient, prix, tva)
@@ -993,7 +996,7 @@ PROCEDURE IMPRIME_FICHE(date, nbClient, prix, tva)
 	LOCAL doubleStrikeOff := Chr(27)+Chr(71)+Chr(0)
 	gprinter = GetDefaultPrinter()
 	SET PRINTER ON
-    SET PRINTER TO &gprinter
+    SET PRINTER TO facture
 	SET CONSOLE OFF
 	? init
 	? doubleStrike
@@ -1025,6 +1028,7 @@ PROCEDURE IMPRIME_FICHE(date, nbClient, prix, tva)
 	SET PRINTER OFF
 	SET CONSOLE ON
 RETURN
+*/
 
 PROCEDURE IMPRIME_ADDITION_TVA1(nFact)
 	// Imprime la facture de la table numTable TVA : 5.5
@@ -1046,7 +1050,7 @@ PROCEDURE IMPRIME_ADDITION_TVA1(nFact)
 	UPDATE_CONTENT_TABLE_REMISE(nFact, 100 - remise)
 	UPDATE_LISTE_TABLE_STATUS(nFact, 1)
 	UPDATE_LISTE_TABLE_ST(nFact, "E")
-	SPOOL_FACTURE(nFact, "E")
+	SPOOL_FACTURE(nFact, .F.)
 RETURN
 
 PROCEDURE IMPRIME_ADDITION_TVA2(nFact)
@@ -1061,9 +1065,25 @@ PROCEDURE IMPRIME_ADDITION_TVA2(nFact)
 	
 	UPDATE_LISTE_TABLE_STATUS(nFact, 1)
 	UPDATE_LISTE_TABLE_ST(nFact, "S")
-	SPOOL_FACTURE(nFact, "S")
+	SPOOL_FACTURE(nFact, .T.)
 RETURN
 
+
+PROCEDURE SPOOL_FACTURE(nFact, isService)
+	LOCAL contentList := GET_LISTE_PLAT_IMPRESSION(nFact)
+	LOCAL date := GET_DATE_CREATION(nFact)
+	LOCAL remise := GET_TOTAL_REMISE(nFact)
+	LOCAL vat1 := GET_VAT1_BY_FACTURE(nFact)
+	LOCAL tableNumber := GET_NUM_TABLE(nFact)
+	LOCAL customerNumber := GET_NB_CLIENT(nFact)
+	LOCAL total := GET_TOTAL(nFact)
+	LOCAL totalPlat := GET_TOTAL_55(nFact) - GET_TOTAL_REMISE_55(nFact)
+	LOCAL totalBoisson := GET_TOTAL_196(nFact) - GET_TOTAL_REMISE_196(nFact)
+	
+	PRINT_RECEIPT(date, isService, tableNumber, customerNumber, contentList, total, remise, COMPUTE_TVA(totalPlat, vat1), COMPUTE_TVA(totalBoisson, vat2Value))
+RETURN
+
+/*
 PROCEDURE SPOOL_FACTURE(nFact, type)
 	LOCAL liste := GET_LISTE_PLAT_IMPRESSION(nFact)
 	LOCAL itr
@@ -1080,7 +1100,7 @@ PROCEDURE SPOOL_FACTURE(nFact, type)
 	LOCAL vat1 := GET_VAT1_BY_FACTURE(nFact)
 	gprinter = GetDefaultPrinter()
 	SET PRINTER ON
-    SET PRINTER TO &gprinter
+    SET PRINTER TO facture
 	SET CONSOLE OFF
 	? init
 	? doubleStrike
@@ -1124,6 +1144,7 @@ PROCEDURE SPOOL_FACTURE(nFact, type)
 	SET PRINTER OFF
 	SET CONSOLE ON
 RETURN
+*/
 
 PROCEDURE ADD_MENU_TO_TABLE(nFact, numTable, nbClient)
 	LOCAL beginRow := 3
@@ -1289,16 +1310,3 @@ FUNCTION BILAN_USER_FUNC(nMode, nElement, rowNumber)
 		ENDIF
 	ENDCASE
 RETURN ret
-
-PROCEDURE DISP_PRINT_HEADER()
-	LOCAL nom_restaurant := SOCIETE + Chr(32) + UPPER(NOM_SOCIETE)
-	LOCAL localisation := CODE_POSTAL + Chr(32) + UPPER(VILLE)
-	LOCAL telephone := Transform(TEL, "@LR TEL : 99 99 99 99 99")
-	LOCAL num_siret := Transform(SIRET, "@LR SIRET : 999 999 999 99999")
-	
-	? center(nom_restaurant, 42, Chr(32), .T.)
-	? center(localisation, 42, Chr(32), .T.)
-	? center(telephone, 42, Chr(32), .T.)
-	? center(num_siret, 42, Chr(32), .T.)
-	WAIT
-RETURN
