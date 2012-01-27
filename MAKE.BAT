@@ -16,7 +16,8 @@ call %CURRENT_DIR%\..\..\script\initenv.bat
 
 set BIN_DIR=%CURRENT_DIR%\..\bin
 if "%1" == "gesto" GOTO making_gesto
-if NOT "%1" == "gesto" GOTO compile 
+if "%1" == "compile" GOTO compile
+if "%1" == "clean" GOTO clean
 
 :making_gesto
 
