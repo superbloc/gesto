@@ -89,7 +89,6 @@ RETURN output
 /* fonction qui calcule la tva selon le taux */
 
 FUNCTION COMPUTE_TVA(somme, tva)
-   
    LOCAL retVal := 0
    LOCAL pourcent := tva / 100
    retVal := Round(somme * pourcent / (1 + pourcent), 2)
@@ -109,6 +108,39 @@ FUNCTION GET_VAT1_BY_FACTURE(nFact)
 	IF testDate >= vat1ChangeDate
 		retVal := vat1AfterChangeDate
 	ENDIF
+RETURN retVal
+
+// fonction qui justifie plusieurs morceaux de textes.
+// TODO : à améliorer, notamment sur la gestion des valeurs passées en arguments.
+FUNCTION Justify(strList, splitChar, positionList, justifyStyle, paddingChar)
+	LOCAL lengthList := {}
+	LOCAL str := ""
+	LOCAL item
+	LOCAL transformItem
+	LOCAL itr
+	LOCAL retVal
+	LOCAL spaceDiff
+	LOCAL padding := IF(HB_isNIL(paddingChar), Chr(32), paddingChar)
+	FOR EACH item IN strList
+		transformItem := AllTrim(Transform(item, "@B"))
+		AAdd(lengthList, Len(transformItem))
+		str := str + splitChar + transformItem
+	NEXT
+	FOR itr := 1 TO Len(lengthList)
+		IF HB_isNIL(justifyStyle)
+			IF itr == 1
+				spaceDiff := positionList[itr]
+			ELSE
+				spaceDiff := positionList[itr] - lengthList[itr]
+			ENDIF
+		ELSEIF justifyStyle[itr]
+			spaceDiff := positionList[itr]
+		ELSE
+			spaceDiff := positionList[itr] - lengthList[itr]
+		ENDIF
+		str := AtAdjust(splitChar, str, spaceDiff, itr, 0, padding)
+	NEXT
+	retVal := CharRepl(splitChar, str, padding)
 RETURN retVal
 
 /*
