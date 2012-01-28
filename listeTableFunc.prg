@@ -143,6 +143,20 @@ FUNCTION INSERER_LISTE_TABLE(numTable, nbClient)
 	//ENDIF
 RETURN nFact
 
+/* 
+retourne le statut de la table 
+Ce champ est à revoir car elle ne représente pas 
+explicitement l'informatique réelle contenue.
+*/
+FUNCTION GET_TABLE_STATUS(nFact)
+	LOCAL retVal
+	USE ListeTable ALIAS listeTable NEW
+	INDEX ON listeTable->nfact TO listeTable
+	DbSeek(nFact)
+	retVal := listeTable->STATUS
+	CLOSE ListeTable
+RETURN retVal
+
 /* fonction qui retourne le champ st d'une facture */
 FUNCTION GET_ST(nFact)
 	LOCAL retVal

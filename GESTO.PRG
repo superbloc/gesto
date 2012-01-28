@@ -423,6 +423,7 @@ RETURN
 PROCEDURE ENCAISSER(nFact, numTable, panier, date)
 	LOCAL nbClient := GET_NB_CLIENT(nFact)
 	LOCAL typeService := GET_ST(nFact)
+	LOCAL tableStatus := GET_TABLE_STATUS(nFact)
 	DELETING_TABLE(nFact)
 	USE RECETTEJ ALIAS recette NEW
 	APPEND BLANK
@@ -435,7 +436,8 @@ PROCEDURE ENCAISSER(nFact, numTable, panier, date)
 			recette->chq WITH panier["CHQ"], ;
 			recette->esp WITH panier["ESP"] + panier["AREGLER"], ;
 			recette->tr WITH panier["TR"], ;
-			recette->status WITH typeService
+			recette->status WITH typeService, ;
+			recette->tic_print WITH tableStatus
 	CLOSE recette
 RETURN
 
@@ -737,7 +739,11 @@ PROCEDURE VIEW_LISTE_RECETTE_BY_DATE(date)
 			EXIT
 		ENDIF
 		DISP_RECETTE_TOTAL(date)
-		nSelectFact := Achoice(2, 2, nRow - 9, nCol - 2, listeRecette, {}, "recetteUserFunc", position, aChoiceOffset)
+		//nSelectFact := Achoice(2, 2, nRow - 9, nCol - 2, listeRecette, {}, "recetteUserFunc", position, aChoiceOffset)
+		// Customisation de la méthode ACHOICE en surchargeant la source dans override
+		// TODO : réecrire proprement la surchage voir éventuellement recompiler la librairie.
+		// Deux nouveaux paramétres ont été rajoutés : la couleur spéciale et le tag pour utiliser cette couleur.
+		nSelectFact := MyAChoice(2, 2, nRow - 9, nCol - 2, listeRecette, {}, "recetteUserFunc", position, aChoiceOffset, "GR+/B+,GR+/W", '*')
 		position := nSelectFact // on stocke la position pour qu'on reste là où on est.
 		SWITCH LastKey()
 			CASE 83      //code ASCII pour "S"
