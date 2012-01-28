@@ -33,7 +33,7 @@ GLOBAL EXTERN vat2Value
 PROCEDURE PRINTER_ON()
 	LOCAL printerDevice := GetDefaultPrinter()
 	SET PRINTER ON
-    SET PRINTER TO testPrint
+    SET PRINTER TO &printerDevice
 	SET CONSOLE OFF
 	? PRINTER_INIT
 RETURN

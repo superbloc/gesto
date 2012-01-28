@@ -985,6 +985,7 @@ RETURN
 /*
 /******* Méthode d'impression de fiche ********/
 // REMARQUE : étant donnée qu'à chaque fois, on l'utilise avec la tva1, envisager peut-être de l'intégrer directement dans le corps de la méthode.
+/*
 PROCEDURE IMPRIME_FICHE(date, nbClient, prix, tva)
 	LOCAL init := Chr(27)+Chr(64)
 	LOCAL emphasis := Chr(27)+Chr(69)+Chr(1)
