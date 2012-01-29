@@ -746,7 +746,7 @@ PROCEDURE VIEW_LISTE_RECETTE_BY_DATE(date)
 		// Customisation de la méthode ACHOICE en surchargeant la source dans override
 		// TODO : réecrire proprement la surchage voir éventuellement recompiler la librairie.
 		// Deux nouveaux paramétres ont été rajoutés : la couleur spéciale et le tag pour utiliser cette couleur.
-		nSelectFact := MyAChoice(2, 2, nRow - 9, nCol - 2, listeRecette, {}, "recetteUserFunc", position, aChoiceOffset, "GR+/B+,GR+/W", '*')
+		nSelectFact := MyAChoice(2, 2, nRow - 9, nCol - 2, listeRecette, {}, "recetteUserFunc", position, aChoiceOffset, "G/B+,G/W", '*')
 		position := nSelectFact // on stocke la position pour qu'on reste là où on est.
 		SWITCH LastKey()
 			CASE 83      //code ASCII pour "S"
@@ -982,55 +982,6 @@ PROCEDURE DISP_BILAN_ANNEE_MOIS_ENTRY_WINDOW()
 	DISP_BILAN_ANNEE_MOIS(annee)
 RETURN
 
-/*
-/******* Méthode d'impression de fiche ********/
-// REMARQUE : étant donnée qu'à chaque fois, on l'utilise avec la tva1, envisager peut-être de l'intégrer directement dans le corps de la méthode.
-/*
-PROCEDURE IMPRIME_FICHE(date, nbClient, prix, tva)
-	LOCAL init := Chr(27)+Chr(64)
-	LOCAL emphasis := Chr(27)+Chr(69)+Chr(1)
-	LOCAL emphasisOff := Chr(27)+Chr(69)+Chr(0)
-	LOCAL cutting := Chr(29)+Chr(86)+Chr(65)+Chr(0)
-	LOCAL doubleHeight := Chr(27)+Chr(33)+Chr(16)
-	LOCAL doubleHeightOff := Chr(27)+Chr(33)+Chr(0)
-	LOCAL doubleStrike := Chr(27)+Chr(71)+Chr(1)
-	LOCAL doubleStrikeOff := Chr(27)+Chr(71)+Chr(0)
-	gprinter = GetDefaultPrinter()
-	SET PRINTER ON
-    SET PRINTER TO facture
-	SET CONSOLE OFF
-	? init
-	? doubleStrike
-	? doubleHeight
-	? "        Restaurant CHINA STAR             "
-	? doubleHeightOff
-	? doubleStrikeOff
-	? "        65 bis, Rue Henri Laroche         "
-	? "          60800 CREPY-EN-VALOIS           " 
-	? "           Tel: 03.44.94.18.88            "
-	? "         Siret : 441 538 132 00013        "
-	? "Facture                 LE ", PadL(AllTrim(str(Day(date))), 2, "0")+ "/"+ PadL(AllTrim(str(Month(date))), 2, "0") + "/" + AllTrim(str(Year(date)))
-	? "------------------------------------------"
-	? "         ", AllTrim(str(nbClient)), " REPAS Complet(s)"
-	? doubleStrike
-	? doubleHeight
-	? "*** TOTAL                     " + PadL(AllTrim(str(Round(prix, 2))), 7)
-	? doubleStrikeOff
-	? doubleHeightOff
-	? "   Dont TVA ", AllTrim(str(tva, 5, 2)), "% :       ", AllTrim(str(Round((prix * tva / 100) / (1 + tva / 100), 2)))
-	? ""
-	? doubleStrike
-	? "          Restaurant CHINA STAR           "
-	? "        VOUS REMERCIE ET A BIENTOT        "
-	? doubleStrikeOff
-	? cutting
-	EJECT
-	SET PRINTER TO
-	SET PRINTER OFF
-	SET CONSOLE ON
-RETURN
-*/
-
 PROCEDURE IMPRIME_ADDITION_TVA1(nFact)
 	// Imprime la facture de la table numTable TVA : 5.5
 	// Cf méthode 'imprime_addition_tva2'
@@ -1083,69 +1034,6 @@ PROCEDURE SPOOL_FACTURE(nFact, isService)
 	
 	PRINT_RECEIPT(date, isService, tableNumber, customerNumber, contentList, total, remise, COMPUTE_TVA(totalPlat, vat1), COMPUTE_TVA(totalBoisson, vat2Value))
 RETURN
-
-/*
-PROCEDURE SPOOL_FACTURE(nFact, type)
-	LOCAL liste := GET_LISTE_PLAT_IMPRESSION(nFact)
-	LOCAL itr
-	LOCAL init := Chr(27)+Chr(64)
-	LOCAL emphasis := Chr(27)+Chr(69)+Chr(1)
-	LOCAL emphasisOff := Chr(27)+Chr(69)+Chr(0)
-	LOCAL cutting := Chr(29)+Chr(86)+Chr(65)+Chr(0)
-	LOCAL doubleHeight := Chr(27)+Chr(33)+Chr(16)
-	LOCAL doubleHeightOff := Chr(27)+Chr(33)+Chr(0)
-	LOCAL doubleStrike := Chr(27)+Chr(71)+Chr(1)
-	LOCAL doubleStrikeOff := Chr(27)+Chr(71)+Chr(0)
-	LOCAL date := GET_DATE_CREATION(nFact)
-	LOCAL remise := GET_TOTAL_REMISE(nFact) > 0
-	LOCAL vat1 := GET_VAT1_BY_FACTURE(nFact)
-	gprinter = GetDefaultPrinter()
-	SET PRINTER ON
-    SET PRINTER TO facture
-	SET CONSOLE OFF
-	? init
-	? doubleStrike
-	? doubleHeight
-	? "        Restaurant CHINA STAR             "
-	? doubleHeightOff
-	? doubleStrikeOff
-	? "        65 bis, Rue Henri Laroche         "
-	? "          60800 CREPY-EN-VALOIS           " 
-	? "           Tel: 03.44.94.18.88            "
-	? "         Siret : 441 538 132 00013        "
-	IF type == "S"
-	? "TABLE : ", AllTrim(GET_NUM_TABLE(nFact)), " / ", AllTrim(str(GET_NB_CLIENT(nFact))), "         LE ", PadL(AllTrim(str(Day(date))), 2, "0")+ "/"+ PadL(AllTrim(str(Month(date))), 2, "0") + "/" + AllTrim(str(Year(date)))
-	ELSEIF type == "E"
-	? "EMPORTER : ", AllTrim(GET_NUM_TABLE(nFact)), "             LE ", PadL(AllTrim(str(Day(date))), 2, "0")+ "/"+ PadL(AllTrim(str(Month(date))), 2, "0") + "/" + AllTrim(str(Year(date)))	
-	ENDIF
-	? "------------------------------------------"
-	? "Code      designation        Qte    Mont"
-	FOR itr := 1 TO LEN(liste)
-	? liste[itr]
-	NEXT
-	? ""
-	? "S/TOTAL                       " + PadL(AllTrim(str(GET_TOTAL(nFact))), 7)
-	IF remise
-	? "    Remise :                  " + PadL(AllTrim(str(Round(GET_TOTAL_REMISE(nFact)/-1, 2))), 7)
-	? " Total net :                  " + PadL(AllTrim(str(Round(GET_TOTAL(nFact) - GET_TOTAL_REMISE(nFact), 2))), 7)
-	ENDIF
-	? ""
-	? "         Dont TVA  " + str(vat1, 5, 2) + "% : " + str(COMPUTE_TVA(GET_TOTAL_55(nFact) - GET_TOTAL_REMISE_55(nFact), vat1), 7, 2)
-	? "         Dont TVA  " + str(vat2Value, 5, 2) + "% : " + str(COMPUTE_TVA(GET_TOTAL_196(nFact) - GET_TOTAL_REMISE_196(nFact), vat2Value), 7, 2)
-	? doubleStrike
-	? doubleHeight
-	? emphasis
-	? "*** TOTAL                     " + PadL(AllTrim(str(Round(GET_TOTAL(nFact) - GET_TOTAL_REMISE(nFact), 2))), 7)
-	? ""
-	? "          MERCI DE VOTRE VISITE        "
-	? "              A BIENTOT                "
-	? cutting
-	EJECT
-	SET PRINTER TO
-	SET PRINTER OFF
-	SET CONSOLE ON
-RETURN
-*/
 
 PROCEDURE ADD_MENU_TO_TABLE(nFact, numTable, nbClient)
 	LOCAL beginRow := 3
