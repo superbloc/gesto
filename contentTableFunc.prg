@@ -265,34 +265,6 @@ FUNCTION GET_LISTE_PLAT(nFact)
 	AAdd(aaList, totalBoisson)
 RETURN aaList
 
-/*
-FUNCTION GET_LISTE_PLAT_IMPRESSION(nFact)
-	LOCAL aaList := {}
-	LOCAL totalPlat := 0
-	LOCAL totalBoisson := 0
-	LOCAL outputStr
-	LOCAL itr := 1
-	USE ContentTable ALIAS contenu NEW
-	USE Menu ALIAS menu NEW
-	SELECT menu
-	INDEX ON Upper(menu->code_plat) TO menu
-	
-	SELECT contenu
-	SET RELATION TO Upper(contenu->code_plat) INTO menu
-
-	LOCATE FOR contenu->nfact == nFact
-	DO WHILE Found()
-		outputStr := ENCODE_IMPRESSION_PLATS({contenu->code_plat, menu->libelle, contenu->quantite, menu->prix * contenu->quantite, contenu->offert})
-		itr++
-		AAdd(aaList, Upper(outputStr))
-		CONTINUE
-	ENDDO
-	
-	CLOSE menu
-	CLOSE contenu
-RETURN aaList
-*/
-
 FUNCTION GET_LISTE_PLAT_IMPRESSION(nFact)
 	LOCAL retVal := {}
 	LOCAL priceDisplay
