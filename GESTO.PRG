@@ -149,24 +149,20 @@ PROCEDURE DISP_TABLE()
 	LOCAL beginRow := 16
 	LOCAL beginCol := 3
 	LOCAL color
+	LOCAL tables := GetTableList()
+	LOCAL table
 	@ beginRow, beginCol SAY "table : " PICTURE "@!" COLOR "RB+/B+"
 	DispBox(beginRow - 1, 1, nRow - 2, nCol - 2, B_SINGLE, "R+/B+")
-	USE ListeTable NEW
-	DO WHILE .NOT. Eof()
-		color := "W+/B+"
-		IF FieldGet(7) == 1
-			color := "G/B+"
-		ENDIF
-		@ beginRow + 2, beginCol SAY FieldGet(1) COLOR color
-	SKIP
-	IF beginCol >= 75
+	FOR EACH table IN tables
+		color := IF(table:mTicPrint, "G/B+", "W+/B+")
+		@ beginRow + 2, beginCol SAY table:mNumber COLOR color
+	IF beginCol >= nCol - 5
 		beginCol := 3
 		beginRow++
 	ELSE
 		beginCol += 4
 	ENDIF
-	ENDDO
-	CLOSE ListeTable
+	NEXT
 RETURN
 
 PROCEDURE VIEW_EDIT_MENU()

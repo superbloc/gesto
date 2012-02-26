@@ -13,7 +13,7 @@
 FUNCTION GetTableList
 	LOCAL table
 	LOCAL retVal := {}
-	USE "..\bin\ListeTable" ALIAS tables
+	USE ListeTable ALIAS tables
 	DO WHILE !Eof()
 		table := Table():new()
 		table:mId := tables->nfact

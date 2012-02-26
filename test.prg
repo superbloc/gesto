@@ -9,7 +9,7 @@ PROCEDURE MAIN
 	*/
 	
 	LOCAL item
-	LOCAL tableList := GetTableList()
+	LOCAL tableList := GetRecetteList()
 	FOR EACH item IN tableList
 		? item:toString
 	NEXT
