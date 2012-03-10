@@ -767,6 +767,13 @@ PROCEDURE VIEW_LISTE_RECETTE_BY_DATE(date)
 				KEYBOARD Chr(255)
 				Inkey()
 				EXIT
+			CASE 76      // code ASCII pour "L"
+			CASE 108     // code ASCII pour "l"
+				//permet d'afficher la liste des composants
+				DISP_LISTE_COMPOSANT(date)
+				KEYBOARD Chr(255)
+				Inkey()
+				EXIT
 			CASE K_RETURN
 				VIEW_TABLE(mapping[nSelectFact])
 				KEYBOARD Chr(255)
@@ -880,6 +887,22 @@ PROCEDURE EDIT_RECETTE(nFact)
 	MODIF_RECETTE(nFact, numTable, nbClient, cb, chq, esp, tr, total)
 	UPDATE_CONTENT_TABLE_NUM_TABLE(nFact, numTable)
 	
+RETURN
+
+PROCEDURE DISP_LISTE_COMPOSANT(date)
+	LOCAL stock := GetStockBoissonHash(date)
+	LOCAL elem
+	LOCAL stockList := {}
+	FOR EACH elem IN HGetValues(stock)
+		AAdd(stockList, elem:toString())
+	NEXT
+	IF Len(stockList) > 0
+		@ 5, 5 CLEAR TO 20, 75
+		DispBox(5, 5, 20, 75, B_SINGLE, "G+/B+")
+		DO WHILE LastKey() <> K_ESC
+			Achoice(6, 8, 19, 72, stockList)
+		ENDDO
+	ENDIF
 RETURN
 
 PROCEDURE DISP_RECETTE_TOTAL(date)
@@ -1173,7 +1196,9 @@ FUNCTION recetteUserFunc(nMode, nElement, rowNumber)
 		ELSEIF key == K_RETURN
 			ret := AC_SELECT
 		ELSEIF 	key == 67 .OR. key == 99 // touche c
-			ret := 	AC_ABORT	
+			ret := 	AC_ABORT
+		ELSEIF  key == Asc("l") .OR. key == Asc("L") // touche l
+			ret := AC_SELECT
 		ENDIF
 	ENDCASE
 RETURN ret

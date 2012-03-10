@@ -9,6 +9,7 @@ if "%HB_BIN_INSTALL%" == "" set HB_BIN_INSTALL=%HB_INSTALL%\bin
 if "%HB_LIB_INSTALL%" == "" set HB_LIB_INSTALL=%HB_INSTALL%\lib
 if "%HB_INC_INSTALL%" == "" set HB_INC_INSTALL=%HB_INSTALL%\include
 if "%HB_LIBLIST%" == "" set HB_LIBLIST=common.lib debug.lib vm.lib rtl.lib zlib.lib pcrepos.lib gtwin.lib codepage.lib lang.lib rdd.lib macro.lib pp.lib dbffpt.lib dbfntx.lib dbfcdx.lib hsx.lib hbsix.lib ct.lib tip.lib
+rem if "%HB_LIBLIST%" == "" set HB_LIBLIST=common.lib debug.lib vm.lib rtl.lib zlib.lib pcrepos.lib codepage.lib lang.lib rdd.lib macro.lib pp.lib dbffpt.lib dbfntx.lib dbfcdx.lib hsx.lib hbsix.lib ct.lib tip.lib
 
 set CURRENT_DIR=%CD%
 
@@ -34,7 +35,8 @@ echo Compiling application gesto...
 %HB_BIN_INSTALL%\harbour override.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
 %HB_BIN_INSTALL%\harbour printFunc.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
 %HB_BIN_INSTALL%\harbour Table.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
-bcc32 -O2 -I%HB_INC_INSTALL% -L%HB_LIB_INSTALL% gesto.c listeTableFunc.c contentTableFunc.c menuTableFunc.c miscUtil.c recetteFunc.c bilanFunc.c bilanMFunc.c parameterFunc.c override.c printFunc.c Table.c %HB_LIBLIST%
+%HB_BIN_INSTALL%\harbour StockBoisson.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
+bcc32 -O2 -I%HB_INC_INSTALL% -L%HB_LIB_INSTALL% gesto.c listeTableFunc.c contentTableFunc.c menuTableFunc.c miscUtil.c recetteFunc.c bilanFunc.c bilanMFunc.c parameterFunc.c override.c printFunc.c Table.c StockBoisson.c %HB_LIBLIST%
 
 GOTO clean
 
