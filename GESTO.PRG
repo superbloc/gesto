@@ -893,14 +893,20 @@ PROCEDURE DISP_LISTE_COMPOSANT(date)
 	LOCAL stock := GetStockBoissonHash(date)
 	LOCAL elem
 	LOCAL stockList := {}
-	FOR EACH elem IN HGetValues(stock)
-		AAdd(stockList, elem:toString())
+	LOCAL stockStrList := {}
+	LOCAL nSelected
+	stockList := HGetValues(stock)
+	FOR EACH elem IN stockList
+		AAdd(stockStrList, elem:toString())
 	NEXT
-	IF Len(stockList) > 0
+	IF Len(stockStrList) > 0
 		@ 5, 5 CLEAR TO 20, 75
 		DispBox(5, 5, 20, 75, B_SINGLE, "G+/B+")
 		DO WHILE LastKey() <> K_ESC
-			Achoice(6, 8, 19, 72, stockList)
+			nSelected := Achoice(6, 8, 19, 72, stockStrList, ,"boissonStockUserFunc", nSelected, aChoiceOffset)
+			IF nSelected >= 1
+				PRINT_LISTE_COMPOSANT(stockList)
+			ENDIF
 		ENDDO
 	ENDIF
 RETURN
@@ -1198,6 +1204,20 @@ FUNCTION recetteUserFunc(nMode, nElement, rowNumber)
 		ELSEIF 	key == 67 .OR. key == 99 // touche c
 			ret := 	AC_ABORT
 		ELSEIF  key == Asc("l") .OR. key == Asc("L") // touche l
+			ret := AC_SELECT
+		ENDIF
+	ENDCASE
+RETURN ret
+
+FUNCTION boissonStockUserFunc(nMode, nElement, rowNumber)
+	LOCAL key := LastKey()
+	LOCAL ret := AC_CONT
+	DO CASE
+	CASE nMode == AC_IDLE
+	CASE nMode == AC_EXCEPT
+		IF key == K_ESC
+			ret := AC_ABORT
+		ELSEIF key == Asc("i") .OR. key == Asc("I")
 			ret := AC_SELECT
 		ENDIF
 	ENDCASE

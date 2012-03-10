@@ -38,6 +38,13 @@ PROCEDURE PRINTER_ON()
 	? PRINTER_INIT
 RETURN
 
+PROCEDURE PRINTER_ON_TEST(outputFile)
+	SET PRINTER ON
+    SET PRINTER TO &outputFile
+	SET CONSOLE OFF
+	? PRINTER_INIT
+RETURN
+
 // On désactive le mode impression, la console reprend la main.
 PROCEDURE PRINTER_OFF()
 	? PAPER_CUT
@@ -153,5 +160,17 @@ PROCEDURE PRINT_RECEIPT(date, isService, tableNumber, customerNumber, contentLis
 	ENDIF
 	PRINT_DATE(internMsg, date)
 	PRINT_RECEIPT_BODY(date, tableNumber, customerNumber, contentList, total, discountValue, vat1, vat2)
+	PRINTER_OFF()
+RETURN
+
+// imprime la liste des composants
+PROCEDURE PRINT_LISTE_COMPOSANT(stockBoissonList)
+	LOCAL stockBoisson
+	//PRINTER_ON_TEST("stockBoisson")
+	PRINTER_ON()
+	PRINT_HT_BARRE()
+	FOR EACH stockBoisson in stockBoissonList
+		? stockBoisson:toPrintString()
+	NEXT
 	PRINTER_OFF()
 RETURN

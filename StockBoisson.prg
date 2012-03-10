@@ -52,6 +52,7 @@ CLASS StockBoisson
 
 	EXPORTED:
 		METHOD toString
+		METHOD toPrintString
 	
 		ACCESS mCodePlat INLINE (::_codePlat)
 		ACCESS mLibelle INLINE (::_libelle)
@@ -68,4 +69,9 @@ METHOD toString CLASS StockBoisson
 	LOCAL retVal := ""
 	//retVal := retVal + ::_codePlat + " - " + ::_libelle + " - " + Str(::_quantite, ,0, .T.)
 	retVal := Justify({::_codePlat, ::_libelle, ::_quantite}, "#", {2, 12, 50}, {.T., .T., .F.})
+RETURN retVal
+
+METHOD toPrintString CLASS StockBoisson
+	LOCAL retVal := ""
+	retVal := Justify({::_codePlat, ::_libelle, ::_quantite}, "#", {6, 12, 36}, {.T., .T., .F.})
 RETURN retVal
