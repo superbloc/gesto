@@ -724,6 +724,7 @@ PROCEDURE VIEW_LISTE_RECETTE_BY_DATE(date)
 	LOCAL listeRecette
 	LOCAL position := 1
 	LOCAL deleteConfirm := .F.
+	LOCAL dispColor := .F.
 	DO WHILE LastKey() <> K_ESC
 		CLS
 		DispBox(0, 0, nRow - 1, nCol - 1, B_SINGLE, "BG+/B+")
@@ -742,7 +743,7 @@ PROCEDURE VIEW_LISTE_RECETTE_BY_DATE(date)
 		// Customisation de la méthode ACHOICE en surchargeant la source dans override
 		// TODO : réecrire proprement la surchage voir éventuellement recompiler la librairie.
 		// Deux nouveaux paramétres ont été rajoutés : la couleur spéciale et le tag pour utiliser cette couleur.
-		nSelectFact := MyAChoice(2, 2, nRow - 9, nCol - 2, listeRecette, {}, "recetteUserFunc", position, aChoiceOffset, "G/B+,G/W", '*')
+		nSelectFact := MyAChoice(2, 2, nRow - 9, nCol - 2, listeRecette, {}, "recetteUserFunc", position, aChoiceOffset, "G/B+,G/W", '*', dispColor)
 		position := nSelectFact // on stocke la position pour qu'on reste là où on est.
 		SWITCH LastKey()
 			CASE 83      //code ASCII pour "S"
@@ -771,6 +772,12 @@ PROCEDURE VIEW_LISTE_RECETTE_BY_DATE(date)
 			CASE 108     // code ASCII pour "l"
 				//permet d'afficher la liste des composants
 				DISP_LISTE_COMPOSANT(date)
+				KEYBOARD Chr(255)
+				Inkey()
+				EXIT
+			CASE 84
+			CASE 116
+				dispColor := !dispColor
 				KEYBOARD Chr(255)
 				Inkey()
 				EXIT
@@ -1204,6 +1211,8 @@ FUNCTION recetteUserFunc(nMode, nElement, rowNumber)
 		ELSEIF 	key == 67 .OR. key == 99 // touche c
 			ret := 	AC_ABORT
 		ELSEIF  key == Asc("l") .OR. key == Asc("L") // touche l
+			ret := AC_SELECT
+		ELSEIF  key == Asc("t") .OR. key == Asc("T") // touche t
 			ret := AC_SELECT
 		ENDIF
 	ENDCASE

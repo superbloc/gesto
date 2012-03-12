@@ -73,5 +73,5 @@ RETURN retVal
 
 METHOD toPrintString CLASS StockBoisson
 	LOCAL retVal := ""
-	retVal := Justify({::_codePlat, ::_libelle, ::_quantite}, "#", {6, 12, 36}, {.T., .T., .F.})
+	retVal := Justify({::_codePlat, SubStr(::_libelle, 0, 18), ::_quantite}, "#", {6, 12, 36}, {.T., .T., .F.})
 RETURN retVal
