@@ -125,7 +125,7 @@ FUNCTION GET_TOTAL_55(nFact)
 	SELECT contenu
 	SET RELATION TO Upper(contenu->code_plat) INTO menu
 	
-	SUM contenu->quantite * menu->prix TO val FOR contenu->nfact == nFact .AND. menu->categorie == "P"
+	SUM contenu->quantite * menu->prix TO val FOR contenu->nfact == nFact .AND. contenu->offert == 0 .AND. menu->categorie == "P"
 	
 	CLOSE menu
 	CLOSE contenu
@@ -141,7 +141,7 @@ FUNCTION GET_TOTAL_196(nFact)
 	SELECT contenu
 	SET RELATION TO Upper(contenu->code_plat) INTO menu
 	
-	SUM contenu->quantite * menu->prix TO val FOR contenu->nfact == nFact .AND. menu->categorie == "B"
+	SUM contenu->quantite * menu->prix TO val FOR contenu->nfact == nFact .AND. contenu->offert == 0 .AND. menu->categorie == "B"
 	
 	CLOSE menu
 	CLOSE contenu
@@ -265,13 +265,10 @@ FUNCTION GET_LISTE_PLAT(nFact)
 	AAdd(aaList, totalBoisson)
 RETURN aaList
 
-
 FUNCTION GET_LISTE_PLAT_IMPRESSION(nFact)
-	LOCAL aaList := {}
-	LOCAL totalPlat := 0
-	LOCAL totalBoisson := 0
-	LOCAL outputStr
-	LOCAL itr := 1
+	LOCAL retVal := {}
+	LOCAL priceDisplay
+	
 	USE ContentTable ALIAS contenu NEW
 	USE Menu ALIAS menu NEW
 	SELECT menu
@@ -282,12 +279,15 @@ FUNCTION GET_LISTE_PLAT_IMPRESSION(nFact)
 
 	LOCATE FOR contenu->nfact == nFact
 	DO WHILE Found()
-		outputStr := ENCODE_IMPRESSION_PLATS({contenu->code_plat, menu->libelle, contenu->quantite, menu->prix * contenu->quantite, contenu->offert})
-		itr++
-		AAdd(aaList, Upper(outputStr))
+		IF(contenu->offert == 0)
+			priceDisplay := menu->prix * contenu->quantite
+		ELSE
+			priceDisplay := "OFFERT"
+		ENDIF
+		AAdd(retVal, {contenu->code_plat, Upper(SubStr(menu->libelle, 1, 24)), contenu->quantite, priceDisplay})
 		CONTINUE
 	ENDDO
 	
 	CLOSE menu
 	CLOSE contenu
-RETURN aaList
+RETURN retVal

@@ -67,7 +67,8 @@ FUNCTION MyAChoice( nTop,;
                   nOption,;
                   nFirstRow,;
 				  nSpecialColor,;
-				  nSpecialTag)
+				  nSpecialTag,;
+				  nDispColor)
 LOCAL oAChoice
 LOCAL xItem
 
@@ -131,7 +132,7 @@ DEFAULT nRight  TO 0
      Throw( ErrorNew( "BASE", 0, 1127, Procname()+" <nWindowRow>", "Argument type error: <"+valtype(nFirstRow)+">" ) )
   Endif
 
-  oAChoice := MyTAChoice():New( nTop, nLeft, nBottom, nRight, acItems, uSelect, uUserFunc, nOption, nFirstRow, nSpecialColor, nSpecialTag )
+  oAChoice := MyTAChoice():New( nTop, nLeft, nBottom, nRight, acItems, uSelect, uUserFunc, nOption, nFirstRow, nSpecialColor, nSpecialTag, nDispColor )
   oAChoice:cProcName := ProcName( 1 )
   oAChoice:nProcLine := ProcLine( 1 )
 
@@ -157,6 +158,7 @@ CLASS MyTAChoice
    
    VAR    nSpecialColor                  // Particular color
    VAR    nSpecialTag                    // Special Tag
+   VAR	  nDispColor					 // control the display of the color
 
    // NOTE: Clipper does in this way (it doesn't validates each time).
    //       It's for a simple way to add "this compatibility".
@@ -181,7 +183,7 @@ ENDCLASS
 // #define IsAvailableItem( nItem )     ( ::alSelect[ ( nItem ) ] )
 #define IsAvailableItem( nItem )     ( IsItemSelectable( ( nItem ), ::nItems, ::uSelect, ::acItems ) )
 
-METHOD New( nTop, nLeft, nBottom, nRight, acItems, uSelect, uUserFunc, nOption, nFirstRow, nSpecialColor, nSpecialTag ) CLASS MyTAChoice
+METHOD New( nTop, nLeft, nBottom, nRight, acItems, uSelect, uUserFunc, nOption, nFirstRow, nSpecialColor, nSpecialTag, nDispColor ) CLASS MyTAChoice
 
    ::nTop    := IF( HB_ISNUMERIC( nTop ),    nTop,    0 )
    ::nLeft   := IF( HB_ISNUMERIC( nLeft ),   nLeft,   0 )
@@ -212,6 +214,7 @@ METHOD New( nTop, nLeft, nBottom, nRight, acItems, uSelect, uUserFunc, nOption, 
    
    ::nSpecialColor := nSpecialColor
    ::nSpecialTag := nSpecialTag
+   ::nDispColor := nDispColor
 
    IF ::nItems != 0
       ::nArraySize := 0
@@ -573,7 +576,9 @@ LOCAL item
 		 ENDIF
 		 item := ::acItems[ nCurOption ]
 		 IF At(::nSpecialTag, item) > 0
-			SetColor(::nSpecialColor)
+			IF ::nDispColor
+				SetColor(::nSpecialColor)
+			ENDIF
 			item := SubStr(item, 2)
 		 ELSE
 			SetColor(oldColor)

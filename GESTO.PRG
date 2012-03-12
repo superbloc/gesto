@@ -6,14 +6,14 @@
 REQUEST HB_LANG_FR
 
 /* Déclaration des constantes pour paramétrer les infos concernant le restaurant */
-#define SOCIETE "restaurant"
-#define NOM_SOCIETE "china star"
-#define ADR "65, rue henri laroche"
-#define CODE_POSTAL "60800"
-#define VILLE "crepy-en-valois"
-#define TEL 0344941888
-#define SIRET 44153813200013
-#define DEFAUT_REMISE 10
+GLOBAL SOCIETE := "restaurant"
+GLOBAL NOM_SOCIETE := "china star"
+GLOBAL ADR := "65, rue henri laroche"
+GLOBAL CODE_POSTAL := "60800"
+GLOBAL VILLE := "crepy-en-valois"
+GLOBAL TEL := 0344941888
+GLOBAL SIRET := 44153813200013
+GLOBAL DEFAUT_REMISE := 10
 
 GLOBAL nRow := 25
 GLOBAL nCol := 80
@@ -149,24 +149,20 @@ PROCEDURE DISP_TABLE()
 	LOCAL beginRow := 16
 	LOCAL beginCol := 3
 	LOCAL color
+	LOCAL tables := GetTableList()
+	LOCAL table
 	@ beginRow, beginCol SAY "table : " PICTURE "@!" COLOR "RB+/B+"
 	DispBox(beginRow - 1, 1, nRow - 2, nCol - 2, B_SINGLE, "R+/B+")
-	USE ListeTable NEW
-	DO WHILE .NOT. Eof()
-		color := "W+/B+"
-		IF FieldGet(7) == 1
-			color := "G/B+"
-		ENDIF
-		@ beginRow + 2, beginCol SAY FieldGet(1) COLOR color
-	SKIP
-	IF beginCol >= 75
+	FOR EACH table IN tables
+		color := IF(table:mTicPrint, "G/B+", "W+/B+")
+		@ beginRow + 2, beginCol SAY table:mNumber COLOR color
+	IF beginCol >= nCol - 5
 		beginCol := 3
 		beginRow++
 	ELSE
 		beginCol += 4
 	ENDIF
-	ENDDO
-	CLOSE ListeTable
+	NEXT
 RETURN
 
 PROCEDURE VIEW_EDIT_MENU()
@@ -574,7 +570,7 @@ PROCEDURE DISP_FICHE_INFO_WINDOW()
 	@ 12, 15 SAY "nb client : " PICTURE "@!" COLOR "RB+/B+" GET nbClient PICTURE "999" RANGE 0, 100
 	@ 14, 15 SAY "prix : " PICTURE "@!" COLOR "RB+/B+" GET prix PICTURE "9999.99" RANGE 0, 1000
 	READ
-	IMPRIME_FICHE(date, nbClient, prix, GET_VAT1_BY_DATE(date))
+	PRINT_FICHE(date, nbClient, prix, COMPUTE_TVA(prix, GET_VAT1_BY_DATE(date)))
 RETURN 
 
 PROCEDURE VIEW_TABLE(nFact)
@@ -592,6 +588,7 @@ PROCEDURE VIEW_TABLE(nFact)
 	LOCAL realNumTable := GET_NUM_TABLE(nFact)
 	LOCAL vat1 := GET_VAT1_BY_FACTURE(nFact)
 	LOCAL exitCondition := (GET_NB_PLAT(nFact) == 0)
+	LOCAL position := 1
 	DO WHILE LastKey() <> K_ESC .AND. .NOT. exitCondition
 		nbClient := GET_NB_CLIENT(nFact)
 		platListe := GET_LISTE_PLAT(nFact)
@@ -622,7 +619,8 @@ PROCEDURE VIEW_TABLE(nFact)
 		@2, 20 SAY "tva " + str(vat1, 5, 2) + "% :" PICTURE "@!" COLOR "R+/B+"
 		@2, 30 SAY COMPUTE_TVA(totalPlat, vat1) PICTURE "999.99"
 		@2, 45 SAY "remise : " + AllTrim(str(totalRemise)) PICTURE "@!" COLOR "R+/B+"
-		nSelectPlat := Achoice(beginRow + 1, 6, 20, 75, platListe, {}, "USERFUNC")
+		nSelectPlat := Achoice(beginRow + 1, 6, 20, 75, platListe, {}, "USERFUNC", position, aChoiceOffset)
+		position := nSelectPlat
 		SWITCH LastKey()
 			CASE 83    // code ASCII pour 'S'
 			CASE 115   // code ASCII pour 's'
@@ -661,7 +659,8 @@ PROCEDURE VIEW_TABLE(nFact)
 			CASE 70   // code ASCII pour 'F'
 			CASE 102  // code ASCII pour 'f'
 				// on imprime toujours la fiche sur la base de la tva1
-				IMPRIME_FICHE(GET_DATE_CREATION(nFact), nbClient, dispTotal, vat1)
+				//IMPRIME_FICHE(GET_DATE_CREATION(nFact), nbClient, dispTotal, vat1)
+				PRINT_FICHE(GET_DATE_CREATION(nFact), nbClient, dispTotal, COMPUTE_TVA(totalPlat, vat1), COMPUTE_TVA(totalBoisson, vat2Value))
 				KEYBOARD Chr(255)  // Pour que le ESC de l'annulation ne soit pas intercepté par la boucle principale
 				Inkey()
 				EXIT
@@ -725,6 +724,7 @@ PROCEDURE VIEW_LISTE_RECETTE_BY_DATE(date)
 	LOCAL listeRecette
 	LOCAL position := 1
 	LOCAL deleteConfirm := .F.
+	LOCAL dispColor := .F.
 	DO WHILE LastKey() <> K_ESC
 		CLS
 		DispBox(0, 0, nRow - 1, nCol - 1, B_SINGLE, "BG+/B+")
@@ -743,7 +743,7 @@ PROCEDURE VIEW_LISTE_RECETTE_BY_DATE(date)
 		// Customisation de la méthode ACHOICE en surchargeant la source dans override
 		// TODO : réecrire proprement la surchage voir éventuellement recompiler la librairie.
 		// Deux nouveaux paramétres ont été rajoutés : la couleur spéciale et le tag pour utiliser cette couleur.
-		nSelectFact := MyAChoice(2, 2, nRow - 9, nCol - 2, listeRecette, {}, "recetteUserFunc", position, aChoiceOffset, "GR+/B+,GR+/W", '*')
+		nSelectFact := MyAChoice(2, 2, nRow - 9, nCol - 2, listeRecette, {}, "recetteUserFunc", position, aChoiceOffset, "G/B+,G/W", '*', dispColor)
 		position := nSelectFact // on stocke la position pour qu'on reste là où on est.
 		SWITCH LastKey()
 			CASE 83      //code ASCII pour "S"
@@ -765,6 +765,19 @@ PROCEDURE VIEW_LISTE_RECETTE_BY_DATE(date)
 			CASE 67      // code ASCII pour "C"
 			CASE 99      // code ASCII pour "c"
 				CLOTURER(date)
+				KEYBOARD Chr(255)
+				Inkey()
+				EXIT
+			CASE 76      // code ASCII pour "L"
+			CASE 108     // code ASCII pour "l"
+				//permet d'afficher la liste des composants
+				DISP_LISTE_COMPOSANT(date)
+				KEYBOARD Chr(255)
+				Inkey()
+				EXIT
+			CASE 84
+			CASE 116
+				dispColor := !dispColor
 				KEYBOARD Chr(255)
 				Inkey()
 				EXIT
@@ -883,6 +896,28 @@ PROCEDURE EDIT_RECETTE(nFact)
 	
 RETURN
 
+PROCEDURE DISP_LISTE_COMPOSANT(date)
+	LOCAL stock := GetStockBoissonHash(date)
+	LOCAL elem
+	LOCAL stockList := {}
+	LOCAL stockStrList := {}
+	LOCAL nSelected
+	stockList := HGetValues(stock)
+	FOR EACH elem IN stockList
+		AAdd(stockStrList, elem:toString())
+	NEXT
+	IF Len(stockStrList) > 0
+		@ 5, 5 CLEAR TO 20, 75
+		DispBox(5, 5, 20, 75, B_SINGLE, "G+/B+")
+		DO WHILE LastKey() <> K_ESC
+			nSelected := Achoice(6, 8, 19, 72, stockStrList, ,"boissonStockUserFunc", nSelected, aChoiceOffset)
+			IF nSelected >= 1
+				PRINT_LISTE_COMPOSANT(stockList)
+			ENDIF
+		ENDDO
+	ENDIF
+RETURN
+
 PROCEDURE DISP_RECETTE_TOTAL(date)
 	@ 19, 2 SAY "cb : " + PadL(AllTrim(str(GET_TOTAL_CB(date))), 7) PICTURE "@!"
 	@ 19, 20 SAY "cheque : " + PadL(AllTrim(str(GET_TOTAL_CHQ(date))), 7) PICTURE "@!"
@@ -979,52 +1014,6 @@ PROCEDURE DISP_BILAN_ANNEE_MOIS_ENTRY_WINDOW()
 	DISP_BILAN_ANNEE_MOIS(annee)
 RETURN
 
-/******* Méthode d'impression de fiche ********/
-// REMARQUE : étant donnée qu'à chaque fois, on l'utilise avec la tva1, envisager peut-être de l'intégrer directement dans le corps de la méthode.
-PROCEDURE IMPRIME_FICHE(date, nbClient, prix, tva)
-	LOCAL init := Chr(27)+Chr(64)
-	LOCAL emphasis := Chr(27)+Chr(69)+Chr(1)
-	LOCAL emphasisOff := Chr(27)+Chr(69)+Chr(0)
-	LOCAL cutting := Chr(29)+Chr(86)+Chr(65)+Chr(0)
-	LOCAL doubleHeight := Chr(27)+Chr(33)+Chr(16)
-	LOCAL doubleHeightOff := Chr(27)+Chr(33)+Chr(0)
-	LOCAL doubleStrike := Chr(27)+Chr(71)+Chr(1)
-	LOCAL doubleStrikeOff := Chr(27)+Chr(71)+Chr(0)
-	gprinter = GetDefaultPrinter()
-	SET PRINTER ON
-    SET PRINTER TO &gprinter
-	SET CONSOLE OFF
-	? init
-	? doubleStrike
-	? doubleHeight
-	? "        Restaurant CHINA STAR             "
-	? doubleHeightOff
-	? doubleStrikeOff
-	? "        65 bis, Rue Henri Laroche         "
-	? "          60800 CREPY-EN-VALOIS           " 
-	? "           Tel: 03.44.94.18.88            "
-	? "         Siret : 441 538 132 00013        "
-	? "Facture                 LE ", PadL(AllTrim(str(Day(date))), 2, "0")+ "/"+ PadL(AllTrim(str(Month(date))), 2, "0") + "/" + AllTrim(str(Year(date)))
-	? "------------------------------------------"
-	? "         ", AllTrim(str(nbClient)), " REPAS Complet(s)"
-	? doubleStrike
-	? doubleHeight
-	? "*** TOTAL                     " + PadL(AllTrim(str(Round(prix, 2))), 7)
-	? doubleStrikeOff
-	? doubleHeightOff
-	? "   Dont TVA ", AllTrim(str(tva, 5, 2)), "% :       ", AllTrim(str(Round((prix * tva / 100) / (1 + tva / 100), 2)))
-	? ""
-	? doubleStrike
-	? "          Restaurant CHINA STAR           "
-	? "        VOUS REMERCIE ET A BIENTOT        "
-	? doubleStrikeOff
-	? cutting
-	EJECT
-	SET PRINTER TO
-	SET PRINTER OFF
-	SET CONSOLE ON
-RETURN
-
 PROCEDURE IMPRIME_ADDITION_TVA1(nFact)
 	// Imprime la facture de la table numTable TVA : 5.5
 	// Cf méthode 'imprime_addition_tva2'
@@ -1045,7 +1034,7 @@ PROCEDURE IMPRIME_ADDITION_TVA1(nFact)
 	UPDATE_CONTENT_TABLE_REMISE(nFact, 100 - remise)
 	UPDATE_LISTE_TABLE_STATUS(nFact, 1)
 	UPDATE_LISTE_TABLE_ST(nFact, "E")
-	SPOOL_FACTURE(nFact, "E")
+	SPOOL_FACTURE(nFact, .F.)
 RETURN
 
 PROCEDURE IMPRIME_ADDITION_TVA2(nFact)
@@ -1060,68 +1049,22 @@ PROCEDURE IMPRIME_ADDITION_TVA2(nFact)
 	
 	UPDATE_LISTE_TABLE_STATUS(nFact, 1)
 	UPDATE_LISTE_TABLE_ST(nFact, "S")
-	SPOOL_FACTURE(nFact, "S")
+	SPOOL_FACTURE(nFact, .T.)
 RETURN
 
-PROCEDURE SPOOL_FACTURE(nFact, type)
-	LOCAL liste := GET_LISTE_PLAT_IMPRESSION(nFact)
-	LOCAL itr
-	LOCAL init := Chr(27)+Chr(64)
-	LOCAL emphasis := Chr(27)+Chr(69)+Chr(1)
-	LOCAL emphasisOff := Chr(27)+Chr(69)+Chr(0)
-	LOCAL cutting := Chr(29)+Chr(86)+Chr(65)+Chr(0)
-	LOCAL doubleHeight := Chr(27)+Chr(33)+Chr(16)
-	LOCAL doubleHeightOff := Chr(27)+Chr(33)+Chr(0)
-	LOCAL doubleStrike := Chr(27)+Chr(71)+Chr(1)
-	LOCAL doubleStrikeOff := Chr(27)+Chr(71)+Chr(0)
+
+PROCEDURE SPOOL_FACTURE(nFact, isService)
+	LOCAL contentList := GET_LISTE_PLAT_IMPRESSION(nFact)
 	LOCAL date := GET_DATE_CREATION(nFact)
-	LOCAL remise := GET_TOTAL_REMISE(nFact) > 0
+	LOCAL remise := GET_TOTAL_REMISE(nFact)
 	LOCAL vat1 := GET_VAT1_BY_FACTURE(nFact)
-	gprinter = GetDefaultPrinter()
-	SET PRINTER ON
-    SET PRINTER TO &gprinter
-	SET CONSOLE OFF
-	? init
-	? doubleStrike
-	? doubleHeight
-	? "        Restaurant CHINA STAR             "
-	? doubleHeightOff
-	? doubleStrikeOff
-	? "        65 bis, Rue Henri Laroche         "
-	? "          60800 CREPY-EN-VALOIS           " 
-	? "           Tel: 03.44.94.18.88            "
-	? "         Siret : 441 538 132 00013        "
-	IF type == "S"
-	? "TABLE : ", AllTrim(GET_NUM_TABLE(nFact)), " / ", AllTrim(str(GET_NB_CLIENT(nFact))), "         LE ", PadL(AllTrim(str(Day(date))), 2, "0")+ "/"+ PadL(AllTrim(str(Month(date))), 2, "0") + "/" + AllTrim(str(Year(date)))
-	ELSEIF type == "E"
-	? "EMPORTER : ", AllTrim(GET_NUM_TABLE(nFact)), "             LE ", PadL(AllTrim(str(Day(date))), 2, "0")+ "/"+ PadL(AllTrim(str(Month(date))), 2, "0") + "/" + AllTrim(str(Year(date)))	
-	ENDIF
-	? "------------------------------------------"
-	? "Code      designation        Qte    Mont"
-	FOR itr := 1 TO LEN(liste)
-	? liste[itr]
-	NEXT
-	? ""
-	? "S/TOTAL                       " + PadL(AllTrim(str(GET_TOTAL(nFact))), 7)
-	IF remise
-	? "    Remise :                  " + PadL(AllTrim(str(Round(GET_TOTAL_REMISE(nFact)/-1, 2))), 7)
-	? " Total net :                  " + PadL(AllTrim(str(Round(GET_TOTAL(nFact) - GET_TOTAL_REMISE(nFact), 2))), 7)
-	ENDIF
-	? ""
-	? "         Dont TVA  " + str(vat1, 5, 2) + "% : " + str(COMPUTE_TVA(GET_TOTAL_55(nFact) - GET_TOTAL_REMISE_55(nFact), vat1), 7, 2)
-	? "         Dont TVA  " + str(vat2Value, 5, 2) + "% : " + str(COMPUTE_TVA(GET_TOTAL_196(nFact) - GET_TOTAL_REMISE_196(nFact), vat2Value), 7, 2)
-	? doubleStrike
-	? doubleHeight
-	? emphasis
-	? "*** TOTAL                     " + PadL(AllTrim(str(Round(GET_TOTAL(nFact) - GET_TOTAL_REMISE(nFact), 2))), 7)
-	? ""
-	? "          MERCI DE VOTRE VISITE        "
-	? "              A BIENTOT                "
-	? cutting
-	EJECT
-	SET PRINTER TO
-	SET PRINTER OFF
-	SET CONSOLE ON
+	LOCAL tableNumber := GET_NUM_TABLE(nFact)
+	LOCAL customerNumber := GET_NB_CLIENT(nFact)
+	LOCAL total := GET_TOTAL(nFact)
+	LOCAL totalPlat := GET_TOTAL_55(nFact) - GET_TOTAL_REMISE_55(nFact)
+	LOCAL totalBoisson := GET_TOTAL_196(nFact) - GET_TOTAL_REMISE_196(nFact)
+	
+	PRINT_RECEIPT(date, isService, tableNumber, customerNumber, contentList, total, remise, COMPUTE_TVA(totalPlat, vat1), COMPUTE_TVA(totalBoisson, vat2Value))
 RETURN
 
 PROCEDURE ADD_MENU_TO_TABLE(nFact, numTable, nbClient)
@@ -1266,7 +1209,25 @@ FUNCTION recetteUserFunc(nMode, nElement, rowNumber)
 		ELSEIF key == K_RETURN
 			ret := AC_SELECT
 		ELSEIF 	key == 67 .OR. key == 99 // touche c
-			ret := 	AC_ABORT	
+			ret := 	AC_ABORT
+		ELSEIF  key == Asc("l") .OR. key == Asc("L") // touche l
+			ret := AC_SELECT
+		ELSEIF  key == Asc("t") .OR. key == Asc("T") // touche t
+			ret := AC_SELECT
+		ENDIF
+	ENDCASE
+RETURN ret
+
+FUNCTION boissonStockUserFunc(nMode, nElement, rowNumber)
+	LOCAL key := LastKey()
+	LOCAL ret := AC_CONT
+	DO CASE
+	CASE nMode == AC_IDLE
+	CASE nMode == AC_EXCEPT
+		IF key == K_ESC
+			ret := AC_ABORT
+		ELSEIF key == Asc("i") .OR. key == Asc("I")
+			ret := AC_SELECT
 		ENDIF
 	ENDCASE
 RETURN ret
@@ -1288,16 +1249,3 @@ FUNCTION BILAN_USER_FUNC(nMode, nElement, rowNumber)
 		ENDIF
 	ENDCASE
 RETURN ret
-
-PROCEDURE DISP_PRINT_HEADER()
-	LOCAL nom_restaurant := SOCIETE + Chr(32) + UPPER(NOM_SOCIETE)
-	LOCAL localisation := CODE_POSTAL + Chr(32) + UPPER(VILLE)
-	LOCAL telephone := Transform(TEL, "@LR TEL : 99 99 99 99 99")
-	LOCAL num_siret := Transform(SIRET, "@LR SIRET : 999 999 999 99999")
-	
-	? center(nom_restaurant, 42, Chr(32), .T.)
-	? center(localisation, 42, Chr(32), .T.)
-	? center(telephone, 42, Chr(32), .T.)
-	? center(num_siret, 42, Chr(32), .T.)
-	WAIT
-RETURN
