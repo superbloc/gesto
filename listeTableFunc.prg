@@ -201,6 +201,7 @@ FUNCTION GET_DATE_CREATION(nFact)
 		CLOSE listeTable
 	ELSE
 		CLOSE listeTable
+		USE
 		USE RECETTEJ ALIAS recette NEW
 		INDEX ON recette->nfact TO recette
 		DbSeek(nFact)

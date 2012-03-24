@@ -38,7 +38,9 @@ echo Compiling application gesto...
 %HB_BIN_INSTALL%\harbour printFunc.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
 %HB_BIN_INSTALL%\harbour Table.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
 %HB_BIN_INSTALL%\harbour StockBoisson.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
+%HB_BIN_INSTALL%\harbour test.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
 bcc32 -O2 -I%HB_INC_INSTALL% -L%HB_LIB_INSTALL% gesto.c listeTableFunc.c contentTableFunc.c menuTableFunc.c miscUtil.c recetteFunc.c bilanFunc.c bilanMFunc.c parameterFunc.c override.c printFunc.c Table.c StockBoisson.c %HB_LIBLIST%
+rem bcc32 -O2 -I%HB_INC_INSTALL% -L%HB_LIB_INSTALL% test.c StockBoisson.c %HB_LIBLIST%
 
 GOTO clean
 
@@ -52,6 +54,7 @@ echo Compiling...
 %HB_BIN_INSTALL%\harbour createBilanY.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
 %HB_BIN_INSTALL%\harbour createRecetteJ.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
 %HB_BIN_INSTALL%\harbour create_paramTable_table.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
+%HB_BIN_INSTALL%\harbour create_stockTable.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
 %HB_BIN_INSTALL%\harbour convertRecettej.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
 rem %HB_BIN_INSTALL%\harbour parameterFunc.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
 
@@ -64,6 +67,7 @@ bcc32 -O2 -I%HB_INC_INSTALL% -L%HB_LIB_INSTALL% createBilanM.c %HB_LIBLIST%
 bcc32 -O2 -I%HB_INC_INSTALL% -L%HB_LIB_INSTALL% createBilanY.c %HB_LIBLIST%
 bcc32 -O2 -I%HB_INC_INSTALL% -L%HB_LIB_INSTALL% createRecetteJ.c %HB_LIBLIST%
 bcc32 -O2 -I%HB_INC_INSTALL% -L%HB_LIB_INSTALL% create_paramTable_table.c %HB_LIBLIST%
+bcc32 -O2 -I%HB_INC_INSTALL% -L%HB_LIB_INSTALL% create_stockTable.c %HB_LIBLIST%
 bcc32 -O2 -I%HB_INC_INSTALL% -L%HB_LIB_INSTALL% convertRecettej.c %HB_LIBLIST%
 rem bcc32 -O2 -I%HB_INC_INSTALL% -L%HB_LIB_INSTALL% parameterFunc.c %HB_LIBLIST%
 

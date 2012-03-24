@@ -1,12 +1,25 @@
 /* Liste ici les méthodes ou fonctions relatives à la table ContentTable */
 /* la table contentTable présente le contenu pour chaque table */
 
-/* procedure qui insére dans la table contentTable les nouvelles valeurs */
+/* procedure qui insére dans la table contentTable les nouvelles valeurs 
+ * On réactualise la remise si nécessaire.
+ */
 PROCEDURE MODIF_CONTENT_RECORD(nFact, oldCodePlat, newCodePlat, quantite)
+	LOCAL tableTaux := GET_TAUX(nFact)
+	
 	USE ContentTable ALIAS contenu
+	USE Menu ALIAS menu NEW
+	SELECT menu
+	INDEX ON Upper(menu->code_plat) TO menu
+	
+	SELECT contenu
+	SET RELATION TO Upper(contenu->code_plat) INTO menu
+	
 	REPLACE contenu->code_plat WITH newCodePlat, ;
-			contenu->quantite WITH quantite ;
+			contenu->quantite WITH quantite, ;
+			contenu->remise WITH menu->prix * quantite * (100 - tableTaux) / 100 ;
 			FOR contenu->nfact == nFact .AND. contenu->code_plat == oldCodePlat
+	CLOSE menu
 	CLOSE contenu
 RETURN
 
@@ -45,9 +58,22 @@ FUNCTION GET_NB_PLAT(nFact)
 RETURN retValue
 
 /* Méthode d'insertion dans la table content_table */
-PROCEDURE INSERER_CONTENT_TABLE(nFact, numTable, date, codePlat, quantite, nbClient)
+PROCEDURE INSERER_CONTENT_TABLE(nFact, numTable, date, codePlat, quantite, nbClient, nTaux)
+	LOCAL tableTaux := 100
+	IF nTaux <> NIL
+		tableTaux := nTaux
+	ENDIF
+	
 	USE ContentTable ALIAS contenu
 	INDEX ON Upper(str(contenu->nfact) + contenu->code_plat) TO Contenu
+	
+	USE Menu ALIAS menu NEW
+	SELECT menu
+	INDEX ON Upper(menu->code_plat) TO menu
+	
+	SELECT contenu
+	SET RELATION TO Upper(contenu->code_plat) INTO menu
+	
 	DbSeek(PadL(AllTrim(str(nFact)), 7) + codePlat)
 	IF Found()
 		REPLACE contenu->quantite WITH contenu->quantite + quantite
@@ -59,8 +85,9 @@ PROCEDURE INSERER_CONTENT_TABLE(nFact, numTable, date, codePlat, quantite, nbCli
 				contenu->code_plat WITH codePlat, ;
 				contenu->quantite WITH quantite, ;
 				contenu->offert WITH 0, ;
-				contenu->remise WITH 0
+				contenu->remise WITH menu->prix * contenu->quantite * (100 - tableTaux) / 100
 	END
+	CLOSE menu
 	CLOSE contenu
 RETURN
 
