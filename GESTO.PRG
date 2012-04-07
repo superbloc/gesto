@@ -35,6 +35,7 @@ PROCEDURE MAIN()
 	SetMode(nRow, nCol)
 	HB_SetCodePage("FR")
 	SET DATE TO FRENCH
+	SET EPOCH TO 1950
 	INIT_GLOBALVAR()         // initialisation des variables globales des paramétres.
 	KEYBOARD Chr(255)        // pour que la première fois qu'on entre dans l'appli, on applique une réactualisation de l'écran
 	Inkey()
@@ -45,7 +46,7 @@ PROCEDURE MAIN()
 			CASE 97   // code ASCII pour 'a'
 				numTable := DISP_VIEW_TABLE()
 				IF numTable <> NIL
-					ADD_MENU_TO_TABLE(GET_NFACT(numTable), numTable, GET_NB_CLIENT(GET_NFACT(numTable)))
+					ADD_MENU_TO_TABLE(GET_NFACT(numTable), numTable, GET_NB_CLIENT(GET_NFACT(numTable)), GET_TAUX(GET_NFACT(numTable)))
 					KEYBOARD Chr(255)  // Pour que le ESC de l'annulation ne soit pas intercepté par la boucle principale
 					Inkey()
 					VIEW_TABLE(GET_NFACT(numTable))
@@ -72,7 +73,12 @@ PROCEDURE MAIN()
 				EXIT
 			CASE 84   // code ASCII pour 'T'
 			CASE 116  // code ASCII pour 't'
-				VIEW_LISTE_TABLE(listeTable)
+			    // On applique la réactualisation uniquement dans le 
+				// cas où la liste des tables n'est pas nulle.
+				actualisation := Len(listeTable) > 0
+				IF actualisation
+					VIEW_LISTE_TABLE(listeTable)
+				ENDIF
 				EXIT
 			CASE 69   // code ASCII pour 'E'
 			CASE 101  // code ASCII pour 'e'
@@ -412,6 +418,7 @@ PROCEDURE ENCAISSEMENT_TABLE(nFact, numTable)
 	Inkey(0)
 	IF quit
 		ENCAISSER(nFact, numTable, reglementPanier, date)
+		STOCKER(nFact, date)
 		EXIT
 	ENDIF
 	ENDDO
@@ -436,6 +443,47 @@ PROCEDURE ENCAISSER(nFact, numTable, panier, date)
 			recette->status WITH typeService, ;
 			recette->tic_print WITH tableStatus
 	CLOSE recette
+RETURN
+
+/**
+ * Méthode permettant de stocker les boissons.
+ *
+ *
+ */
+PROCEDURE STOCKER(nFact, date)
+	LOCAL stockList := {}
+	LOCAL stockBoisson
+	USE Menu ALIAS menu NEW
+	INDEX ON menu->CODE_PLAT TO MENUINDEX
+	
+	USE ContentTable ALIAS contenu NEW
+	INDEX ON contenu->NFACT TO contenu_nfact_idx
+	SET RELATION TO contenu->CODE_PLAT INTO menu
+	LOCATE FOR contenu->NFACT == nFact .AND. menu->STOCKAGE == "O"
+	DO WHILE Found()
+		stockBoisson := StockBoisson():new()
+		stockBoisson:mCodePlat := contenu->CODE_PLAT
+		stockBoisson:mQuantite := contenu->QUANTITE
+		AAdd(stockList, stockBoisson)
+		CONTINUE
+	ENDDO
+	CLOSE contenu
+	CLOSE menu
+	
+	USE StockTable ALIAS stock
+	INDEX ON (DtoC(stock->DATE) + stock->CODE_PLAT) TO stock_code_plat_idx
+	FOR EACH stockBoisson IN stockList
+		DbSeek(DtoC(date) + stockBoisson:mCodePlat)
+		IF Found()
+			REPLACE stock->QUANTITE WITH stock->QUANTITE + stockBoisson:mQuantite
+		ELSE
+			APPEND BLANK
+			REPLACE stock->DATE WITH date, ;
+					stock->CODE_PLAT WITH stockBoisson:mCodePlat, ;
+					stock->QUANTITE WITH stockBoisson:mQuantite
+		ENDIF
+	NEXT
+	CLOSE stock
 RETURN
 
 FUNCTION CHECK_REGLEMENT(totalCarteBleue, totalCheque, totalEspece, totalTicketResto, restantAregler)
@@ -587,6 +635,7 @@ PROCEDURE VIEW_TABLE(nFact)
 	LOCAL tauRemise
 	LOCAL totalRemise
 	LOCAL realNumTable := GET_NUM_TABLE(nFact)
+	LOCAL tableTaux := GET_TAUX(nFact) // on regarde s'il y a une réduction générale sur la table.
 	LOCAL vat1 := GET_VAT1_BY_FACTURE(nFact)
 	LOCAL exitCondition := (GET_NB_PLAT(nFact) == 0)
 	LOCAL position := 1
@@ -629,7 +678,7 @@ PROCEDURE VIEW_TABLE(nFact)
 				EXIT
 			CASE 65   // code ASCII pour 'A'
 			CASE 97   // code ASCII pour 'a'
-				ADD_MENU_TO_TABLE(nFact, realNumTable, nbClient)
+				ADD_MENU_TO_TABLE(nFact, realNumTable, nbClient, tableTaux)
 				KEYBOARD Chr(255)  // Pour que le ESC de l'annulation ne soit pas intercepté par la boucle principale
 				Inkey()
 				EXIT
@@ -687,34 +736,48 @@ PROCEDURE VIEW_TABLE(nFact)
 	ENDDO
 RETURN
 
+/**
+ * Affiche la liste des tables en cours.
+ * param  : une liste contenant des instances de Table
+ * return : nil
+ */
 PROCEDURE VIEW_LISTE_TABLE(listeTable)
 	LOCAL nSelectTable
 	LOCAL dataList
-	CLS
-	DispBox(0, 0, nRow - 1, nCol - 1, B_SINGLE, "BG+/B+")
-	@ 0, 30 SAY "affichage liste table " PICTURE "@!"
-	DispBox(nRow - 5, 1, nRow - 5, nCol - 2, B_SINGLE, "BG+/B+")
-	@ nRow - 5, 60 SAY "total : " + AllTrim(str(DECODE_GET_ALL_TOTAL(listeTable))) PICTURE "@!"
-	@ nRow - 5, 20 SAY "clients : " + AllTrim(str(GET_TOTAL_CLIENT())) PICTURE "@!"
-	nSelectTable := Achoice(2, 2, nRow - 6, nCol - 2, listeTable)
-	IF nSelectTable > 0
-		VIEW_TABLE(GET_NFACT(DECODE_GET_NUM_TABLE(listeTable[nSelectTable])))
+	IF Len(listeTable) > 0
+		CLS
+		DispBox(0, 0, nRow - 1, nCol - 1, B_SINGLE, "BG+/B+")
+		@ 0, 30 SAY "affichage liste table " PICTURE "@!"
+		DispBox(nRow - 5, 1, nRow - 5, nCol - 2, B_SINGLE, "BG+/B+")
+		@ nRow - 5, 60 SAY "total : " + AllTrim(str(DECODE_GET_ALL_TOTAL(listeTable))) PICTURE "@!"
+		@ nRow - 5, 20 SAY "clients : " + AllTrim(str(GET_TOTAL_CLIENT())) PICTURE "@!"
+		nSelectTable := Achoice(2, 2, nRow - 6, nCol - 2, listeTable)
+		IF nSelectTable > 0
+			VIEW_TABLE(GET_NFACT(DECODE_GET_NUM_TABLE(listeTable[nSelectTable])))
+		ENDIF
 	ENDIF
 RETURN
 
+/**
+ * Affiche le menu pour choisir la date du jour de la recette.
+ * param  : nil
+ * return : nil
+ */
 PROCEDURE VIEW_LISTE_RECETTE()
 	LOCAL hash := GET_ALL_DATE()
 	LOCAL listeDate := {}
 	LOCAL i, nSelectDate
-	CLS
-	FOR i := 1 TO Len(hash)
-		AAdd(listeDate, DtoC(HGetKeyAt(hash, i)))
-	NEXT
-	DispBox(5, 5, 15, 15, B_SINGLE, "G+/B+")
-	@ 5, 8 SAY "RECETTE"
-	nSelectDate := Achoice(6, 6, 14, 14, listeDate)
-	IF nSelectDate > 0
-		VIEW_LISTE_RECETTE_BY_DATE(HGetKeyAt(hash, nSelectDate))
+	IF Len(hash) > 0
+		FOR i := 1 TO Len(hash)
+			AAdd(listeDate, DtoC(HGetKeyAt(hash, i)))
+		NEXT
+		CLS
+		DispBox(5, 5, 15, 15, B_SINGLE, "G+/B+")
+		@ 5, 8 SAY "RECETTE"
+		nSelectDate := Achoice(6, 6, 14, 14, listeDate)
+		IF nSelectDate > 0
+			VIEW_LISTE_RECETTE_BY_DATE(HGetKeyAt(hash, nSelectDate))
+		ENDIF
 	ENDIF
 RETURN
 
@@ -776,9 +839,17 @@ PROCEDURE VIEW_LISTE_RECETTE_BY_DATE(date)
 				KEYBOARD Chr(255)
 				Inkey()
 				EXIT
-			CASE 84
-			CASE 116
+			CASE 84      // code ASCII pour "T"
+			CASE 116     // code ASCII pour "t"
 				dispColor := !dispColor
+				KEYBOARD Chr(255)
+				Inkey()
+				EXIT
+			CASE 73	     // code ASCII pour "I"
+			CASE 105     // code ASCII pour "i"
+				IF CONFIRM_BOX("Voulez-vous importer le stock ?")
+					IMPORTER_STOCK(date)
+				ENDIF
 				KEYBOARD Chr(255)
 				Inkey()
 				EXIT
@@ -858,6 +929,7 @@ PROCEDURE CLOTURER(date)
 	INSERT_OR_UPDATE_BILAN_ANNEE_MOIS(annee, mois, nbClient, total, st_55, st_196, service, emporte, cb, chq, esp, tr)
 	CLEAN_RECETTE(date)
 	CLEAN_CONTENT(date)
+	CLEAN_STOCK(date)
 RETURN
 
 PROCEDURE EDIT_RECETTE(nFact)
@@ -917,6 +989,11 @@ PROCEDURE DISP_LISTE_COMPOSANT(date)
 			ENDIF
 		ENDDO
 	ENDIF
+RETURN
+
+PROCEDURE IMPORTER_STOCK(date)
+	LOCAL stock := GetEncaisseStockBoissonHash(date)
+	InsertStockBoisson(stock, date)
 RETURN
 
 PROCEDURE DISP_RECETTE_TOTAL(date)
@@ -1068,7 +1145,7 @@ PROCEDURE SPOOL_FACTURE(nFact, isService)
 	PRINT_RECEIPT(date, isService, tableNumber, customerNumber, contentList, total, remise, COMPUTE_TVA(totalPlat, vat1), COMPUTE_TVA(totalBoisson, vat2Value))
 RETURN
 
-PROCEDURE ADD_MENU_TO_TABLE(nFact, numTable, nbClient)
+PROCEDURE ADD_MENU_TO_TABLE(nFact, numTable, nbClient, nTableTaux)
 	LOCAL beginRow := 3
 	LOCAL beginCol := 3
 	LOCAL GetList := {}
@@ -1100,7 +1177,7 @@ PROCEDURE ADD_MENU_TO_TABLE(nFact, numTable, nbClient)
 			@ beginRow, beginCol + 26 GET quantite PICTURE "99"
 			READ
 			@ beginRow, beginCol + 29 SAY prix * quantite PICTURE "999.99"
-			INSERER_CONTENT_TABLE(nFact, numTable, date, codePlat, quantite, nbClient)
+			INSERER_CONTENT_TABLE(nFact, numTable, date, codePlat, quantite, nbClient, nTableTaux)
 			IF beginRow >= nRow - 4
 				@ 3, 3 CLEAR TO nRow - 3, 37
 				beginRow := 3
@@ -1216,6 +1293,8 @@ FUNCTION recetteUserFunc(nMode, nElement, rowNumber)
 			ret := AC_SELECT
 		ELSEIF  key == Asc("t") .OR. key == Asc("T") // touche t
 			ret := AC_SELECT
+		ELSEIF 	key == Asc("i") .OR. key == Asc("I") // touche i
+			ret := AC_IDLE
 		ENDIF
 	ENDCASE
 RETURN ret

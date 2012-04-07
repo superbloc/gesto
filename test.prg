@@ -17,17 +17,13 @@ PROCEDURE MAIN
 	NEXT
 	*/
 	
-	/*
-	LOCAL item
-	LOCAL date := CtoD("11/28/09")
-	LOCAL stockHash := GetStockBoissonHash(date)
-	DO WHILE LastKey() <>K_ESC
-	*/
 	
-	LOCAL val := Asc("a")
-	LOCAL val1 := 3
-	? Valtype(val)
-	? Valtype(val1)
-	? val1
+	LOCAL item
+	LOCAL date := CtoD("11/28/2009")
+	LOCAL stockHash := GetEncaisseStockBoissonHash(date)
+	? Len(stockHash)
+	FOR EACH item IN HGetValues(stockHash)
+		? item:toString()
+	NEXT 
 RETURN
 
