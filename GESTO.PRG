@@ -14,6 +14,7 @@ GLOBAL VILLE := "crepy-en-valois"
 GLOBAL TEL := 0344941888
 GLOBAL SIRET := 44153813200013
 GLOBAL DEFAUT_REMISE := 10
+GLOBAL TONE_FREQUENCY := 750
 
 GLOBAL nRow := 25
 GLOBAL nCol := 80
@@ -1110,6 +1111,7 @@ PROCEDURE ADD_MENU_TO_TABLE(nFact, numTable, nbClient)
 				EXIT
 			ENDIF
 			@ beginRow, beginCol + 5 SAY "code inexistant" PICTURE "@!"
+			Tone(TONE_FREQUENCY, 2)
 		ENDIF
 	ENDDO
 	CHECK_NFACT(nFact)
