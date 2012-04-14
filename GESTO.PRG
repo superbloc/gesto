@@ -112,6 +112,10 @@ PROCEDURE MAIN()
 			CASE 112 //  code ASCII pour 'p'
 				DISP_PARAMETERS()
 				EXIT
+			CASE 83  //  code ASCII pour 'S'
+			CASE 115 //  code ASCII pour 's'
+				DISP_LISTE_COMPOSANT_YEAR(DISP_STOCK_YEAR())
+				EXIT
 			CASE 255 
 				EXIT
 			DEFAULT
@@ -929,7 +933,7 @@ PROCEDURE CLOTURER(date)
 	INSERT_OR_UPDATE_BILAN_ANNEE_MOIS(annee, mois, nbClient, total, st_55, st_196, service, emporte, cb, chq, esp, tr)
 	CLEAN_RECETTE(date)
 	CLEAN_CONTENT(date)
-	CLEAN_STOCK(date)
+	//CLEAN_STOCK(date)
 RETURN
 
 PROCEDURE EDIT_RECETTE(nFact)
@@ -987,6 +991,44 @@ PROCEDURE DISP_LISTE_COMPOSANT(date)
 			IF nSelected >= 1
 				PRINT_LISTE_COMPOSANT(stockList)
 			ENDIF
+		ENDDO
+	ENDIF
+RETURN
+
+FUNCTION DISP_STOCK_YEAR
+	LOCAL GetList := {}
+	LOCAL year := Year(Date())
+	SetColor("W+/RG")
+	@ 7, 20 CLEAR TO 17, 60
+	DispBox(7, 20, 17, 60, B_DOUBLE, "BG+/RG")
+	@ 7, 25 SAY "appuyez sur ESC pour annuler" PICTURE "@!" COLOR "W/RG"
+	DO WHILE LastKey() <> K_ESC
+		@ 12, 25 SAY "annee : " PICTURE "@!" GET year PICTURE "9999"
+		READ
+		IF LastKey() == K_ESC .OR. LastKey() == K_RETURN
+			EXIT
+		ENDIF
+	ENDDO
+RETURN year
+
+PROCEDURE DISP_LISTE_COMPOSANT_YEAR(year)
+	LOCAL stock := GetStockHashByYear(year)
+	LOCAL elem
+	LOCAL stockList := {}
+	LOCAL stockStrList := {}
+	LOCAL nSelected
+	stockList := HGetValues(stock)
+	FOR EACH elem IN stockList
+		AAdd(stockStrList, elem:toStringTotal())
+	NEXT
+	IF Len(stockStrList) > 0
+		@ 5, 5 CLEAR TO 20, 75
+		DispBox(5, 5, 20, 75, B_SINGLE, "G+/B+")
+		DO WHILE LastKey() <> K_ESC
+			nSelected := Achoice(6, 8, 19, 72, stockStrList, ,"boissonStockUserFunc", nSelected, aChoiceOffset)
+			//IF nSelected >= 1
+			//	PRINT_LISTE_COMPOSANT(stockList)
+			//ENDIF
 		ENDDO
 	ENDIF
 RETURN

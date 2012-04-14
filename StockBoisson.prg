@@ -85,6 +85,36 @@ FUNCTION GetEncaisseStockBoissonHash(date)
 	CLOSE menu
 RETURN elemHash
 
+FUNCTION GetStockHashByYear(year)
+	LOCAL elemHash := Hash()
+	LOCAL stockBoisson
+	LOCAL key
+	USE Menu ALIAS menu NEW
+	INDEX ON menu->CODE_PLAT TO MENUINDEX
+	USE StockTable ALIAS stock NEW
+	//INDEX ON (Year(stock->DATE) + stock->CODE_PLAT) TO STOCKINDEX
+	
+	SET RELATION TO stock->CODE_PLAT INTO menu
+	LOCATE FOR Year(stock->date) == year
+	DO WHILE Found()
+		key := AllTrim(stock->CODE_PLAT)
+		IF HHasKey(elemHash, key)
+			stockBoisson := HGet(elemHash, key)
+			stockBoisson:mQuantite += stock->QUANTITE
+		ELSE
+			stockBoisson := StockBoisson():New()
+			stockBoisson:mCodePlat := key
+			stockBoisson:mLibelle := menu->LIBELLE
+			stockBoisson:mQuantite := stock->QUANTITE
+			stockBoisson:mCategorie := menu->CATEGORIE
+			elemHash[key] := stockBoisson
+		ENDIF
+		CONTINUE
+	ENDDO
+	CLOSE stock
+	CLOSE menu
+return elemHash
+
 PROCEDURE InsertStockBoisson(stockBoisson, date)
 	LOCAL stock
 	USE StockTable ALIAS stock NEW
@@ -121,6 +151,7 @@ CLASS StockBoisson
 
 	EXPORTED:
 		METHOD toString
+		METHOD toStringTotal
 		METHOD toPrintString
 	
 		ACCESS mCodePlat INLINE (::_codePlat)
@@ -140,6 +171,13 @@ METHOD toString CLASS StockBoisson
 	LOCAL retVal := ""
 	//retVal := retVal + ::_codePlat + " - " + ::_libelle + " - " + Str(::_quantite, ,0, .T.)
 	retVal := Justify({::_codePlat, ::_libelle, ::_initialQuantite, ::_quantite}, "#", {2, 12, 45, 55}, {.T., .T., .T., .F.})
+RETURN retVal
+
+METHOD toStringTotal CLASS StockBoisson
+	LOCAL retVal := ""
+	//retVal := retVal + ::_codePlat + " - " + ::_libelle + " - " + Str(::_quantite, ,0, .T.)
+	retVal := Justify({::_codePlat, ::_libelle, ::_quantite}, "#", {2, 12, 45}, {.T., .T., .F.})
+
 RETURN retVal
 
 METHOD toPrintString CLASS StockBoisson
