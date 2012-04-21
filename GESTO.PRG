@@ -361,7 +361,7 @@ FUNCTION DISP_VIEW_TABLE
 RETURN numTable
 
 FUNCTION DISP_CODE
-	LOCAL GetList := {}
+	//LOCAL GetList := {}
 	LOCAL retVal := .F.
 	LOCAL localPassword := space(4)
 	LOCAL oldColor := SetColor()
@@ -370,8 +370,9 @@ FUNCTION DISP_CODE
 	DispBox(9, 20, 15, 60, B_DOUBLE, "BG+/RG")
 	@ 9, 25 SAY "appuyez sur ESC pour annuler" PICTURE "@!" COLOR "W/RG"
 	DO WHILE LastKey() <> K_ESC
-		@ 12, 25 SAY "code : " PICTURE "@!" GET localPassword PICTURE "@!"
-		READ
+		//@ 12, 25 SAY "code : " PICTURE "@!" GET localPassword PICTURE "@!"
+		localPassword := GetSecret(space(4), 12, 25, .F., "mot de passe :")
+		//READ
 		IF LastKey() == K_ESC
 			EXIT
 		ENDIF
