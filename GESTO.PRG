@@ -15,6 +15,7 @@ GLOBAL TEL := 0344941888
 GLOBAL SIRET := 44153813200013
 GLOBAL DEFAUT_REMISE := 10
 GLOBAL TONE_FREQUENCY := 750
+GLOBAL PASSWORD := "cf79ae6addba60ad018347359bd144d2"
 
 GLOBAL nRow := 25
 GLOBAL nCol := 80
@@ -76,7 +77,7 @@ PROCEDURE MAIN()
 			    // On applique la réactualisation uniquement dans le 
 				// cas où la liste des tables n'est pas nulle.
 				actualisation := Len(listeTable) > 0
-				IF actualisation
+				IF actualisation .AND. DISP_CODE()
 					VIEW_LISTE_TABLE(listeTable)
 				ENDIF
 				EXIT
@@ -90,15 +91,21 @@ PROCEDURE MAIN()
 				EXIT
 			CASE 74   // code ASCII pour 'J'
 			CASE 106  // code ASCII pour 'j'
-				DISP_BILAN(Year(Date()), Month(Date()))
+				IF DISP_CODE()
+					DISP_BILAN(Year(Date()), Month(Date()))
+				ENDIF
 				EXIT
 			CASE 85   // code ASCII pour 'U'
 			CASE 117  // code ASCII pour 'u' 
-				DISP_BILAN_ENTRY_WINDOW()
+				IF DISP_CODE()
+					DISP_BILAN_ENTRY_WINDOW()
+				ENDIF
 				EXIT
 			CASE 89   // code ASCII pour 'Y'
 			CASE 121  // code ASCII pour 'y'
-				DISP_BILAN_ANNEE_MOIS_ENTRY_WINDOW()
+				IF DISP_CODE()
+					DISP_BILAN_ANNEE_MOIS_ENTRY_WINDOW()
+				ENDIF
 				EXIT
 			CASE 72   // code ASCII pour 'H'
 			CASE 104  // code ASCII pour 'h'
@@ -106,16 +113,20 @@ PROCEDURE MAIN()
 				EXIT
 			CASE 66  //  code ASCII pour 'B'
 			CASE 98  //  code ASCII pour 'b'
-				VIEW_LISTE_RECETTE()
+				IF DISP_CODE()
+					VIEW_LISTE_RECETTE()
+				ENDIF
 				EXIT
 			CASE 80  //  code ASCII pour 'P'
 			CASE 112 //  code ASCII pour 'p'
-				DISP_PARAMETERS()
+				IF DISP_CODE()
+					DISP_PARAMETERS()
+				ENDIF
 				EXIT
-			CASE 83  //  code ASCII pour 'S'
-			CASE 115 //  code ASCII pour 's'
-				DISP_LISTE_COMPOSANT_YEAR(DISP_STOCK_YEAR())
-				EXIT
+			//CASE 83  //  code ASCII pour 'S'
+			//CASE 115 //  code ASCII pour 's'
+			//	DISP_LISTE_COMPOSANT_YEAR(DISP_STOCK_YEAR())
+			//	EXIT
 			CASE 255 
 				EXIT
 			DEFAULT
@@ -348,6 +359,28 @@ FUNCTION DISP_VIEW_TABLE
 		ENDIF
 	ENDDO
 RETURN numTable
+
+FUNCTION DISP_CODE
+	//LOCAL GetList := {}
+	LOCAL retVal := .F.
+	LOCAL localPassword := space(4)
+	LOCAL oldColor := SetColor()
+	SetColor("W+/RG")
+	@ 9, 20 CLEAR TO 15, 60
+	DispBox(9, 20, 15, 60, B_DOUBLE, "BG+/RG")
+	@ 9, 25 SAY "appuyez sur ESC pour annuler" PICTURE "@!" COLOR "W/RG"
+	DO WHILE LastKey() <> K_ESC
+		//@ 12, 25 SAY "code : " PICTURE "@!" GET localPassword PICTURE "@!"
+		localPassword := GetSecret(space(4), 12, 25, .F., "mot de passe :")
+		//READ
+		IF LastKey() == K_ESC
+			EXIT
+		ENDIF
+		retVal = (HB_MD5(localPassword) == PASSWORD)
+		EXIT
+	ENDDO
+	SetColor(oldColor)
+RETURN retVal
 
 PROCEDURE DISP_ENCAISSEMENT_WINDOW
 	LOCAL GetList := {}
@@ -933,7 +966,7 @@ PROCEDURE CLOTURER(date)
 	INSERT_OR_UPDATE_BILAN_ANNEE_MOIS(annee, mois, nbClient, total, st_55, st_196, service, emporte, cb, chq, esp, tr)
 	CLEAN_RECETTE(date)
 	CLEAN_CONTENT(date)
-	//CLEAN_STOCK(date)
+	CLEAN_STOCK(date)
 RETURN
 
 PROCEDURE EDIT_RECETTE(nFact)
