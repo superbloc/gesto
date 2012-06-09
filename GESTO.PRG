@@ -517,7 +517,8 @@ PROCEDURE STOCKER(nFact, date)
 			APPEND BLANK
 			REPLACE stock->DATE WITH date, ;
 					stock->CODE_PLAT WITH stockBoisson:mCodePlat, ;
-					stock->QUANTITE WITH stockBoisson:mQuantite
+					stock->QUANTITE WITH stockBoisson:mQuantite, ;
+					stock->ARCHIVED WITH .F.
 		ENDIF
 	NEXT
 	CLOSE stock
@@ -964,9 +965,10 @@ PROCEDURE CLOTURER(date)
 	ENDDO
 	CREATE_OR_UPDATE_BILAN(date, nbClient, total, st_55, st_196, service, emporte, cb, chq, esp, tr)
 	INSERT_OR_UPDATE_BILAN_ANNEE_MOIS(annee, mois, nbClient, total, st_55, st_196, service, emporte, cb, chq, esp, tr)
+	//CLEAN_STOCK(date)
+	ARCHIVE_STOCK(date)
 	CLEAN_RECETTE(date)
 	CLEAN_CONTENT(date)
-	CLEAN_STOCK(date)
 RETURN
 
 PROCEDURE EDIT_RECETTE(nFact)
