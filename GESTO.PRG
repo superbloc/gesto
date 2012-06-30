@@ -127,6 +127,15 @@ PROCEDURE MAIN()
 			//CASE 115 //  code ASCII pour 's'
 			//	DISP_LISTE_COMPOSANT_YEAR(DISP_STOCK_YEAR())
 			//	EXIT
+			CASE 76      // code ASCII pour "L"
+			CASE 108     // code ASCII pour "l"
+				//permet d'afficher la liste des composants
+				IF DISP_CODE()
+					DISP_LISTE_COMPOSANT(Date())
+				ENDIF
+				//KEYBOARD Chr(255)
+				//Inkey()
+				EXIT
 			CASE 255 
 				EXIT
 			DEFAULT
