@@ -76,7 +76,8 @@ PROCEDURE INSERER_CONTENT_TABLE(nFact, numTable, date, codePlat, quantite, nbCli
 	
 	DbSeek(PadL(AllTrim(str(nFact)), 7) + codePlat)
 	IF Found()
-		REPLACE contenu->quantite WITH contenu->quantite + quantite
+		REPLACE contenu->quantite WITH contenu->quantite + quantite, ;
+				contenu->remise WITH menu->prix * contenu->quantite * (100 - tableTaux) / 100
 	ELSE
 		APPEND BLANK
 		REPLACE contenu->date WITH date, ;
