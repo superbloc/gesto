@@ -7,7 +7,7 @@ REQUEST HB_LANG_FR
 
 /* Déclaration des constantes pour paramétrer les infos concernant le restaurant */
 GLOBAL SOCIETE := "restaurant"
-GLOBAL NOM_SOCIETE := "gao yun"
+GLOBAL NOM_SOCIETE := "china star"
 GLOBAL ADR := "6 rue du pont perronet"
 GLOBAL CODE_POSTAL := "91800"
 GLOBAL VILLE := "brunoy"
