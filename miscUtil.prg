@@ -2,12 +2,17 @@
 #include "Inkey.ch"
 
 /* Méthode et fonction en tout genre */
-GLOBAL EXTERN vat1ChangeDate
-GLOBAL EXTERN vat1BeforeChangeDate
-GLOBAL EXTERN vat1AfterChangeDate
-GLOBAL EXTERN vat2Value
+GLOBAL EXTERN vat1ChangeDate            // Date de changement de la TVA1 (tva concernant les plats)
+GLOBAL EXTERN vat1BeforeChangeDate      // Valeur de la tva1 avant la date vat1ChangeDate
+GLOBAL EXTERN vat1AfterChangeDate       // Valeur de la tva1 après la date vat1ChangeDate
+GLOBAL EXTERN vat2Value                 // Valeur de la tva2 (TODO : mettre en place un système similaire au TVA1)
 
-
+/* 
+Méthode permettant de formatter l'affichage des plats à saisir dans la vue CONTENU_TABLE
+@ARG : tableau contenant les différents valeurs
+@RET : Chaîne de caractères formattant le plat
+@EX  : 1 - 2 - B1 - BROCHETTE DE CREVETTE - 5,00 - 10,00
+*/
 FUNCTION ENCODE_PRESENTATION_PLAT(aaListePlat)
    LOCAL indice := aaListePlat[1]
    LOCAL codePlat := aaListePlat[2]      
@@ -29,6 +34,7 @@ FUNCTION ENCODE_PRESENTATION_PLAT(aaListePlat)
             PadL(AllTrim(str(total)), 7) + offert + remise
 RETURN output
 
+/* Méthode inverse de celle décrite ci-dessus*/
 FUNCTION DECODE_PRESENTATION_PLAT(cString)
    LOCAL tab := HB_RegExSplit(" - ", cString)
 RETURN tab

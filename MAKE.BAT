@@ -4,9 +4,9 @@ rem positionnement de la plateforme.
 set HB_ARCHITECTURE=w32
 set HB_COMPILER=bcc32
 
-rem set PATH=%PATH%;"C:\dev\programs\BCC55\Bin"
+set PATH=%PATH%;"C:\dev\programs\BCC55\Bin"
 
-if "%HB_INSTALL%" == "" set HB_INSTALL=C:\xharbour-1.20.01.bin.w32.bcc32.5.51
+if "%HB_INSTALL%" == "" set HB_INSTALL=C:\dev\programs\xharbour-1.20.01.bin.w32.bcc32.5.51
 if "%HB_BIN_INSTALL%" == "" set HB_BIN_INSTALL=%HB_INSTALL%\bin
 if "%HB_LIB_INSTALL%" == "" set HB_LIB_INSTALL=%HB_INSTALL%\lib
 if "%HB_INC_INSTALL%" == "" set HB_INC_INSTALL=%HB_INSTALL%\include
@@ -24,6 +24,7 @@ if "%1" == "clean" GOTO clean
 
 :making_gesto
 echo Compiling application gesto...
+echo %HB_BIN_INSTALL%
 %HB_BIN_INSTALL%\harbour gesto.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
 %HB_BIN_INSTALL%\harbour listeTableFunc.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
 %HB_BIN_INSTALL%\harbour contentTableFunc.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w

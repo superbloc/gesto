@@ -7,12 +7,12 @@ REQUEST HB_LANG_FR
 
 /* Déclaration des constantes pour paramétrer les infos concernant le restaurant */
 GLOBAL SOCIETE := "restaurant"
-GLOBAL NOM_SOCIETE := "china star"
-GLOBAL ADR := "65, rue henri laroche"
-GLOBAL CODE_POSTAL := "60800"
-GLOBAL VILLE := "crepy-en-valois"
-GLOBAL TEL := 0344941888
-GLOBAL SIRET := 44153813200013
+GLOBAL NOM_SOCIETE := "GAO YUN"
+GLOBAL ADR := "6 Rue du Pont Perronet"
+GLOBAL CODE_POSTAL := "91800"
+GLOBAL VILLE := "brunoy"
+GLOBAL TEL := 0169393063
+GLOBAL SIRET := 53427427900015
 GLOBAL DEFAUT_REMISE := 10
 GLOBAL TONE_FREQUENCY := 750
 GLOBAL PASSWORD := "cf79ae6addba60ad018347359bd144d2"

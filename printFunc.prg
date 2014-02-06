@@ -151,6 +151,7 @@ RETURN
 // Méthode imprimant une facture
 PROCEDURE PRINT_RECEIPT(date, isService, tableNumber, customerNumber, contentList, total, discountValue, vat1, vat2)
 	LOCAL internMsg
+	//PRINTER_ON_TEST("out.txt")
 	PRINTER_ON()
 	PRINT_HEADER()
 	IF isService
