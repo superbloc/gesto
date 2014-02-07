@@ -10,12 +10,7 @@ GLOBAL EXTERN vat2BeforeChangeDate
 GLOBAL EXTERN vat2AfterChangeDate
 //GLOBAL EXTERN vat2Value
 
-/* 
-Méthode permettant de formatter l'affichage des plats à saisir dans la vue CONTENU_TABLE
-@ARG : tableau contenant les différents valeurs
-@RET : Chaîne de caractères formattant le plat
-@EX  : 1 - 2 - B1 - BROCHETTE DE CREVETTE - 5,00 - 10,00
-*/
+
 FUNCTION ENCODE_PRESENTATION_PLAT(aaListePlat)
    LOCAL indice := aaListePlat[1]
    LOCAL codePlat := aaListePlat[2]      
@@ -37,7 +32,6 @@ FUNCTION ENCODE_PRESENTATION_PLAT(aaListePlat)
             PadL(AllTrim(str(total)), 7) + offert + remise
 RETURN output
 
-/* Méthode inverse de celle décrite ci-dessus*/
 FUNCTION DECODE_PRESENTATION_PLAT(cString)
    LOCAL tab := HB_RegExSplit(" - ", cString)
 RETURN tab

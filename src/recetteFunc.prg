@@ -12,7 +12,79 @@ FUNCTION GET_LISTE_RECETTE(date)
 		CONTINUE
 	ENDDO	
 	CLOSE recette
-RETURN	{recetteListe, mapping}	
+RETURN	{recetteListe, mapping}
+
+FUNCTION GET_LISTE_RECETTE_PRINT(date)
+	LOCAL printRecette
+	LOCAL printRecetteListe := {}
+	LOCAL modePaiement
+	LOCAL detailPaiement
+	LOCAL detailPaiement1
+	LOCAL cpt := 1
+	LOCAL nbPaiement := 0
+	USE RECETTEJ ALIAS recette NEW
+	LOCATE FOR recette->date == date
+	DO WHILE Found()
+		modePaiement := ""
+		detailPaiement := ""
+		detailPaiement1 := ""
+		nbPaiement := 0
+		printRecette := Str(cpt, 3)
+		printRecette := printRecette + "    " + recette->num_table
+		printRecette := printRecette + Str(recette->nb_client, 2)
+		printRecette := printRecette + Str(recette->total, 10, 2)
+		IF recette->cb > 0 
+			nbPaiement++
+			modePaiement := modePaiement + "B "
+			IF nbPaiement > 2
+				detailPaiement1 := detailPaiement1 + "   CB:" + Str(recette->cb, 7, 2) 
+			ELSEIF nbPaiement > 0
+				detailPaiement := detailPaiement + "   CB:" + Str(recette->cb, 7, 2)
+			ENDIF
+		ENDIF
+		
+		IF recette->chq > 0
+			nbPaiement++
+			modePaiement := modePaiement + "C "
+			IF nbPaiement > 2
+				detailPaiement1 := detailPaiement1 + "   CQ:" + Str(recette->chq, 7, 2)
+			ELSEIF nbPaiement > 0
+				detailPaiement := detailPaiement + "   CQ:" + Str(recette->chq, 7, 2)
+			ENDIF
+		ENDIF
+		
+		IF recette->esp > 0
+			nbPaiement++
+			modePaiement := modePaiement + "E "
+			IF nbPaiement > 2
+				detailPaiement1 := detailPaiement1 + "   ES:" + Str(recette->esp, 7, 2)
+			ELSEIF nbPaiement > 0
+				detailPaiement := detailPaiement + "   ES:" + Str(recette->esp, 7, 2)
+			ENDIF
+		ENDIF
+		
+		IF recette->tr > 0
+			nbPaiement++
+			modePaiement := modePaiement + "T"
+			IF nbPaiement > 2
+				detailPaiement1 := detailPaiement1 + "   TR:" + Str(recette->TR, 7, 2)			
+			ELSEIF nbPaiement > 0
+				detailPaiement := detailPaiement + "   TR:" + Str(recette->TR, 7, 2)
+			ENDIF
+		ENDIF
+		printRecette := printRecette + "    " + modePaiement
+		AAdd(printRecetteListe, printRecette)
+		IF nbPaiement > 1
+			AAdd(printRecetteListe, detailPaiement)
+		ENDIF
+		IF nbPaiement > 2
+			AAdd(printRecetteListe, detailPaiement1)
+		ENDIF
+		cpt++
+		CONTINUE
+	ENDDO
+	CLOSE recette
+RETURN printRecetteListe
 
 FUNCTION MAKE_RECETTE_RECORD(aaListe)
 	LOCAL indice := aaListe[1]

@@ -1,3 +1,5 @@
+GLOBAL EXTERN CODE_SUPPLEMENT
+
 /* Liste ici les méthodes ou fonctions relatives à la table ContentTable */
 /* la table contentTable présente le contenu pour chaque table */
 
@@ -37,6 +39,15 @@ FUNCTION GET_TOTAL(nFact)
 	SUM menu->prix * contenu->quantite TO total ;
 		FOR contenu->nfact == nFact .AND. contenu->offert == 0
 	CLOSE menu
+	CLOSE contenu
+	total += GET_TOTAL_SUPPLEMENT(nFact)
+RETURN total
+
+FUNCTION GET_TOTAL_SUPPLEMENT(nFact)
+	LOCAL total := 0
+	USE ContentTable ALIAS contenu NEW
+	SUM contenu->prix * contenu->quantite TO total ;
+		FOR contenu->nfact == nFact .AND. AllTrim(contenu->CODE_PLAT) == CODE_SUPPLEMENT
 	CLOSE contenu
 RETURN total
 
@@ -89,6 +100,26 @@ PROCEDURE INSERER_CONTENT_TABLE(nFact, numTable, date, codePlat, quantite, nbCli
 				contenu->remise WITH menu->prix * contenu->quantite * (100 - tableTaux) / 100
 	END
 	CLOSE menu
+	CLOSE contenu
+RETURN
+
+PROCEDURE INSERER_CONTENT_TABLE_CUSTOM(nFact, numTable, date, codePlat, libelle, prix, quantite, nbClient, nTaux)
+	LOCAL tableTaux := 100
+	IF nTaux <> NIL
+		tableTaux := nTaux
+	ENDIF
+	
+	USE ContentTable ALIAS contenu NEW
+	APPEND BLANK
+	REPLACE contenu->date WITH date, ;
+			contenu->num_table WITH numTable, ;
+			contenu->nfact WITH nFact, ;
+			contenu->code_plat WITH codePlat, ;
+			contenu->libelle WITH libelle, ;
+			contenu->prix WITH prix, ;
+			contenu->quantite WITH quantite, ;
+			contenu->offert WITH 0, ;
+			contenu->remise WITH contenu->prix * contenu->quantite * (100 - tableTaux) / 100
 	CLOSE contenu
 RETURN
 
@@ -157,6 +188,7 @@ FUNCTION GET_TOTAL_55(nFact)
 	
 	CLOSE menu
 	CLOSE contenu
+	val += GET_TOTAL_SUPPLEMENT(nFact)
 RETURN val
 
 FUNCTION GET_TOTAL_196(nFact)
@@ -269,19 +301,24 @@ FUNCTION GET_LISTE_PLAT(nFact)
 	//SUM menu->prix * contenu->quantite TO totalPlat FOR contenu->num_table == numTable .AND. menu->categorie == "P" .AND. contenu->offert == 0
 	LOCATE FOR contenu->nfact == nFact
 	DO WHILE Found()
-		SWITCH menu->categorie
-		CASE "B"
-			IF contenu->offert == 0
-				totalBoisson += menu->prix * contenu->quantite
-			ENDIF
-			EXIT
-		CASE "P"
-			IF contenu->offert == 0
-				totalPlat += menu->prix * contenu->quantite
-			ENDIF
-			EXIT
-		END
-		outputStr := ENCODE_PRESENTATION_PLAT({itr, contenu->code_plat, menu->libelle, contenu->quantite, menu->prix, menu->prix * contenu->quantite, contenu->offert, contenu->remise})
+		IF AllTrim(contenu->CODE_PLAT) == CODE_SUPPLEMENT
+			totalPlat += contenu->prix * contenu->quantite
+			outputStr := ENCODE_PRESENTATION_PLAT({itr, contenu->code_plat, contenu->libelle, contenu->quantite, contenu->prix, contenu->prix * contenu->quantite, contenu->offert, contenu->remise})
+		ELSE
+			SWITCH menu->categorie
+			CASE "B"
+				IF contenu->offert == 0
+					totalBoisson += menu->prix * contenu->quantite
+				ENDIF
+				EXIT
+			CASE "P"
+				IF contenu->offert == 0
+					totalPlat += menu->prix * contenu->quantite
+				ENDIF
+				EXIT
+			END
+			outputStr := ENCODE_PRESENTATION_PLAT({itr, contenu->code_plat, menu->libelle, contenu->quantite, menu->prix, menu->prix * contenu->quantite, contenu->offert, contenu->remise})
+		ENDIF
 		itr++
 		AAdd(aaList, Upper(outputStr))
 		CONTINUE
@@ -296,6 +333,7 @@ RETURN aaList
 FUNCTION GET_LISTE_PLAT_IMPRESSION(nFact)
 	LOCAL retVal := {}
 	LOCAL priceDisplay
+	LOCAL libelle
 	
 	USE ContentTable ALIAS contenu NEW
 	USE Menu ALIAS menu NEW
@@ -308,11 +346,20 @@ FUNCTION GET_LISTE_PLAT_IMPRESSION(nFact)
 	LOCATE FOR contenu->nfact == nFact
 	DO WHILE Found()
 		IF(contenu->offert == 0)
-			priceDisplay := menu->prix * contenu->quantite
+			IF AllTrim(contenu->CODE_PLAT) == CODE_SUPPLEMENT
+				priceDisplay := contenu->prix * contenu->quantite
+			ELSE
+				priceDisplay := menu->prix * contenu->quantite
+			ENDIF
 		ELSE
 			priceDisplay := "OFFERT"
 		ENDIF
-		AAdd(retVal, {contenu->code_plat, Upper(SubStr(menu->libelle, 1, 24)), contenu->quantite, priceDisplay})
+		IF AllTrim(contenu->CODE_PLAT) == CODE_SUPPLEMENT
+			libelle := contenu->libelle
+		ELSE
+			libelle := menu->libelle
+		ENDIF
+		AAdd(retVal, {contenu->code_plat, Upper(SubStr(libelle, 1, 24)), contenu->quantite, priceDisplay})
 		CONTINUE
 	ENDDO
 	

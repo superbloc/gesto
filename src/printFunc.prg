@@ -37,7 +37,7 @@ GLOBAL EXTERN defautRemise
 PROCEDURE PRINTER_ON()
 	LOCAL printerDevice := GetDefaultPrinter()
 	SET PRINTER ON
-    SET PRINTER TO &printerDevice
+    SET PRINTER TO COM1
 	SET CONSOLE OFF
 	? PRINTER_INIT
 RETURN
@@ -155,8 +155,8 @@ RETURN
 // Méthode imprimant une facture
 PROCEDURE PRINT_RECEIPT(date, isService, tableNumber, customerNumber, contentList, total, discountValue, vat1, vat2)
 	LOCAL internMsg
-	//PRINTER_ON_TEST("out.txt")
 	PRINTER_ON()
+	//PRINTER_ON_TEST("titi.txt")
 	PRINT_HEADER()
 	IF isService
 		internMsg := "Table : " + tableNumber + " / " + Str(customerNumber, , ,.T.)
@@ -177,5 +177,30 @@ PROCEDURE PRINT_LISTE_COMPOSANT(stockBoissonList)
 	FOR EACH stockBoisson in stockBoissonList
 		? stockBoisson:toPrintString()
 	NEXT
+	PRINTER_OFF()
+RETURN
+
+PROCEDURE PRINT_LISTE_RECETTE(date, recetteListe)
+	LOCAL recette
+	SET CENTURY ON
+    SET EPOCH TO 1950
+
+	//PRINTER_ON_TEST("RECETTE.TXT")
+	PRINTER_ON()
+	PRINT_HEADER()
+	? "La recette du jour ", DtoC(date)
+	PRINT_HT_BARRE()
+	? "  #  Tab  NbCl    Total"
+	FOR EACH recette IN recetteListe
+		? recette
+	NEXT
+	PRINT_HT_BARRE()
+	? "   Total", Str(GET_TOTAL_RECETTE(date), 10, 2), "   Couv", Str(GET_NB_CLIENT_RECETTE(date), 4)
+	? "    { Dont TVA", Str(GET_VAT1_BY_DATE(date),5,2), Str(GET_TVA_1(date), 7, 2)
+	? "           TVA", Str(GET_VAT2_BY_DATE(date),5,2), Str(GET_TVA_2(date), 7, 2), " }"
+	? "        CB :", Str(GET_TOTAL_CB(date), 10, 2)
+	? "        CQ :", Str(GET_TOTAL_CHQ(date), 10, 2)
+	? "        TR :", Str(GET_TOTAL_TR(date), 10, 2)
+	? "        ES :", Str(GET_TOTAL_ESP(date), 10, 2)
 	PRINTER_OFF()
 RETURN
