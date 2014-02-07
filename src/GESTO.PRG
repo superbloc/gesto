@@ -7,13 +7,13 @@ REQUEST HB_LANG_FR
 
 /* Déclaration des constantes pour paramétrer les infos concernant le restaurant */
 GLOBAL SOCIETE := "restaurant"
-GLOBAL NOM_SOCIETE := "china star"
-GLOBAL ADR := "65, rue henri laroche"
-GLOBAL CODE_POSTAL := "60800"
-GLOBAL VILLE := "crepy-en-valois"
-GLOBAL TEL := 0344941888
-GLOBAL SIRET := 44153813200013
-GLOBAL DEFAUT_REMISE := 10
+GLOBAL NOM_SOCIETE := "gao yun"
+GLOBAL ADR := "6 rue du pont perronet"
+GLOBAL CODE_POSTAL := "91800"
+GLOBAL VILLE := "brunoy"
+GLOBAL TEL := 0169393063
+GLOBAL SIRET := 53427427900015
+//GLOBAL DEFAUT_REMISE := 10
 GLOBAL TONE_FREQUENCY := 750
 GLOBAL PASSWORD := "cf79ae6addba60ad018347359bd144d2"
 
@@ -21,11 +21,17 @@ GLOBAL nRow := 25
 GLOBAL nCol := 80
 GLOBAL aChoiceOffset := 3 // offset à appliquer pour les achoices.
 STATIC listePaiement := {"CBleue", "Cheque", "Especes", "TRestaurant"}
+GLOBAL CODE_SUPPLEMENT := "**"
+STATIC SUPPLEMENT_MSG := "supplement"
 
 GLOBAL EXTERN vat1ChangeDate
 GLOBAL EXTERN vat1BeforeChangeDate
 GLOBAL EXTERN vat1AfterChangeDate
-GLOBAL EXTERN vat2Value
+GLOBAL EXTERN vat2ChangeDate
+GLOBAL EXTERN vat2BeforeChangeDate
+GLOBAL EXTERN vat2AfterChangeDate
+GLOBAL EXTERN defautRemise
+//GLOBAL EXTERN vat2Value
 
 PROCEDURE MAIN()
 	LOCAL aaParam := {}
@@ -33,6 +39,7 @@ PROCEDURE MAIN()
 	LOCAL actualisation
 	LOCAL listeTable
 	LOCAL numTable // utiliser seulement dans l'ajout d'un plat, code à revoir
+	CHK_TABLE()
 	SetMode(nRow, nCol)
 	HB_SetCodePage("FR")
 	SET DATE TO FRENCH
@@ -150,6 +157,45 @@ PROCEDURE MAIN()
 	ENDDO
 	SetColor("W+/N")
 	CLS
+RETURN
+
+PROCEDURE CHK_TABLE()
+	IF !File("param.dbf")
+		CREATE_PARAM_TABLE()
+		POPULATE_PARAM_TABLE()
+	ENDIF
+	
+	IF !File("listeTable.dbf")
+		CREATE_LISTE_TABLE()
+	ENDIF
+	
+	IF !File("menu.dbf")
+		CREATE_MENU_TABLE()
+	ENDIF
+	
+	IF !File("contentTable.dbf")
+		CREATE_CONTENU_TABLE()
+	ELSE
+		CONVERT_CONTENT_TABLE()
+	ENDIF
+	
+	
+	
+	IF !File("recettej.dbf")
+		CREATE_RECETTE_JOURNALIERE_TABLE()
+	ENDIF
+	
+	IF !File("stockTable.dbf")
+		CREATE_STOCK_TABLE()
+	ENDIF
+	
+	IF !File("bilanm.dbf")
+		CREATE_BILAN_ANNEE_TABLE()
+	ENDIF
+	
+	IF !File("bilany.dbf")
+		CREATE_BILAN_MOIS_TABLE()
+	ENDIF
 RETURN
 
 PROCEDURE DISP_MAIN_WINDOW()
@@ -684,6 +730,7 @@ PROCEDURE VIEW_TABLE(nFact)
 	LOCAL realNumTable := GET_NUM_TABLE(nFact)
 	LOCAL tableTaux := GET_TAUX(nFact) // on regarde s'il y a une réduction générale sur la table.
 	LOCAL vat1 := GET_VAT1_BY_FACTURE(nFact)
+	LOCAL vat2 := GET_VAT2_BY_FACTURE(nFact)
 	LOCAL exitCondition := (GET_NB_PLAT(nFact) == 0)
 	LOCAL position := 1
 	DO WHILE LastKey() <> K_ESC .AND. .NOT. exitCondition
@@ -710,11 +757,11 @@ PROCEDURE VIEW_TABLE(nFact)
 		@1, 20 SAY "nb client : " + str(nbClient) PICTURE "@!" COLOR "R+/B+"
 		@1, 50 SAY "total : " + str(dispTotal) PICTURE "@!" COLOR "R+/B+"
 		
-		@2, 1 SAY "tva " + str(vat2Value, 5, 2) + "% : " PICTURE "@!" COLOR "R+/B+"
-		@2, 12 SAY COMPUTE_TVA(totalBoisson, vat2Value) PICTURE "999.99"
+		@2, 1 SAY "tva " + str(vat2, 5, 2) + "% : " PICTURE "@!" COLOR "R+/B+"
+		@2, 12 SAY COMPUTE_TVA(totalBoisson - GET_TOTAL_REMISE_196(nFact), vat2) PICTURE "999.99"
 		
 		@2, 20 SAY "tva " + str(vat1, 5, 2) + "% :" PICTURE "@!" COLOR "R+/B+"
-		@2, 30 SAY COMPUTE_TVA(totalPlat, vat1) PICTURE "999.99"
+		@2, 30 SAY COMPUTE_TVA(totalPlat - GET_TOTAL_REMISE_55(nFact), vat1) PICTURE "999.99"
 		@2, 45 SAY "remise : " + AllTrim(str(totalRemise)) PICTURE "@!" COLOR "R+/B+"
 		nSelectPlat := Achoice(beginRow + 1, 6, 20, 75, platListe, {}, "USERFUNC", position, aChoiceOffset)
 		position := nSelectPlat
@@ -749,7 +796,7 @@ PROCEDURE VIEW_TABLE(nFact)
 				EXIT
 			CASE 82   // code ASCII pour 'R'
 			CASE 114  // code ASCII pour 'r'
-				APPLICATION_REDUCTION(nFact, DEFAUT_REMISE)
+				tableTaux := APPLICATION_REDUCTION(nFact, defautRemise)
 				KEYBOARD Chr(255)  // Pour que le ESC de l'annulation ne soit pas intercepté par la boucle principale
 				Inkey()
 				EXIT
@@ -757,7 +804,7 @@ PROCEDURE VIEW_TABLE(nFact)
 			CASE 102  // code ASCII pour 'f'
 				// on imprime toujours la fiche sur la base de la tva1
 				//IMPRIME_FICHE(GET_DATE_CREATION(nFact), nbClient, dispTotal, vat1)
-				PRINT_FICHE(GET_DATE_CREATION(nFact), nbClient, dispTotal, COMPUTE_TVA(totalPlat, vat1), COMPUTE_TVA(totalBoisson, vat2Value))
+				PRINT_FICHE(GET_DATE_CREATION(nFact), nbClient, dispTotal, COMPUTE_TVA(totalPlat, vat1), COMPUTE_TVA(totalBoisson, vat2))
 				KEYBOARD Chr(255)  // Pour que le ESC de l'annulation ne soit pas intercepté par la boucle principale
 				Inkey()
 				EXIT
@@ -777,7 +824,7 @@ PROCEDURE VIEW_TABLE(nFact)
 				SET_OFFERT_STATUS(nFact, DECODE_GET_CODE_PLAT(platListe[nSelectPlat]))
 				EXIT
 			CASE K_F5 // code ASCII pour 'F5'
-				UPDATE_REMISE(nFact, DECODE_GET_CODE_PLAT(platListe[nSelectPlat]), DEFAUT_REMISE)
+				UPDATE_REMISE(nFact, DECODE_GET_CODE_PLAT(platListe[nSelectPlat]), defautRemise)
 				EXIT
 		END
 	ENDDO
@@ -814,14 +861,16 @@ PROCEDURE VIEW_LISTE_RECETTE()
 	LOCAL hash := GET_ALL_DATE()
 	LOCAL listeDate := {}
 	LOCAL i, nSelectDate
+	SET CENTURY ON
+	SET EPOCH TO 1950
 	IF Len(hash) > 0
 		FOR i := 1 TO Len(hash)
 			AAdd(listeDate, DtoC(HGetKeyAt(hash, i)))
 		NEXT
 		CLS
-		DispBox(5, 5, 15, 15, B_SINGLE, "G+/B+")
+		DispBox(5, 5, 15, 20, B_SINGLE, "G+/B+")
 		@ 5, 8 SAY "RECETTE"
-		nSelectDate := Achoice(6, 6, 14, 14, listeDate)
+		nSelectDate := Achoice(6, 6, 14, 19, listeDate)
 		IF nSelectDate > 0
 			VIEW_LISTE_RECETTE_BY_DATE(HGetKeyAt(hash, nSelectDate))
 		ENDIF
@@ -894,9 +943,12 @@ PROCEDURE VIEW_LISTE_RECETTE_BY_DATE(date)
 				EXIT
 			CASE 73	     // code ASCII pour "I"
 			CASE 105     // code ASCII pour "i"
+				/*
 				IF CONFIRM_BOX("Voulez-vous importer le stock ?")
 					IMPORTER_STOCK(date)
 				ENDIF
+				*/
+				PRINT_LISTE_RECETTE(date, GET_LISTE_RECETTE_PRINT(date))
 				KEYBOARD Chr(255)
 				Inkey()
 				EXIT
@@ -944,7 +996,7 @@ PROCEDURE CLOTURER(date)
 	LOCAL st_55 := GET_TVA_1(date)
 	LOCAL st_196 := GET_TVA_2(date)
 	LOCAL tva1 := COMPUTE_TVA(GET_TVA_1(date), GET_VAT1_BY_DATE(date))
-	LOCAL tva2 := COMPUTE_TVA(GET_TVA_2(date), vat2Value)
+	LOCAL tva2 := COMPUTE_TVA(GET_TVA_2(date), GET_VAT2_BY_DATE(date))
 	LOCAL service := GET_TOTAL_RECETTE_SERVICE(date)
 	LOCAL emporte := GET_TOTAL_RECETTE_EMPORTE(date)
 	LOCAL cb := GET_TOTAL_CB(date)
@@ -961,7 +1013,7 @@ PROCEDURE CLOTURER(date)
 	@ 9, 8 SAY "service : " PICTURE "@!" GET service PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
 	@ 10, 8 SAY "emporte : " PICTURE "@!" GET emporte PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
 	@ 11, 8 SAY "ST tva " + str(GET_VAT1_BY_DATE(date), 5, 2) + "% : " PICTURE "@!" GET st_55 PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
-	@ 12, 8 SAY "ST tva " + str(vat2Value, 5, 2) + "% : " PICTURE "@!" GET st_196 PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
+	@ 12, 8 SAY "ST tva " + str(GET_VAT2_BY_DATE(date), 5, 2) + "% : " PICTURE "@!" GET st_196 PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
 	@ 13, 8 SAY "carte bleue : " PICTURE "@!" GET cb PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
 	@ 14, 8 SAY "cheque : " PICTURE "@!" GET chq PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
 	@ 15, 8 SAY "especes : " PICTURE "@!" GET esp PICTURE "9999999.99" COLOR "W+/GB+" WHEN .F.
@@ -1184,15 +1236,17 @@ PROCEDURE IMPRIME_ADDITION_TVA1(nFact)
 	// méthode appelée lorsqu'on clique sur "E" donc demande de remise
 	
 	LOCAL GetList := {}
-	LOCAL remise := DEFAUT_REMISE
-	SetColor("W+/RG")
-	@ 9, 20 CLEAR TO 15, 60
-	DispBox(9, 20, 15, 60, B_DOUBLE, "BG+/RG")
-	@ 9, 25 SAY "appuyez sur ESC pour annuler" PICTURE "@!" COLOR "W/RG"
-	@ 12, 30 SAY "remise : " PICTURE "@!" GET remise PICTURE "999" RANGE 0, 100
-	READ
-	IF LastKey() == K_ESC
-		RETURN
+	LOCAL remise := defautRemise
+	IF remise > 0	
+		SetColor("W+/RG")
+		@ 9, 20 CLEAR TO 15, 60
+		DispBox(9, 20, 15, 60, B_DOUBLE, "BG+/RG")
+		@ 9, 25 SAY "appuyez sur ESC pour annuler" PICTURE "@!" COLOR "W/RG"
+		@ 12, 30 SAY "remise : " PICTURE "@!" GET remise PICTURE "999" RANGE 0, 100
+		READ
+		IF LastKey() == K_ESC
+			RETURN
+		ENDIF
 	ENDIF
 	UPDATE_LISTE_TABLE_TAUX(nFact, 100 - remise)
 	UPDATE_CONTENT_TABLE_REMISE(nFact, 100 - remise)
@@ -1222,13 +1276,14 @@ PROCEDURE SPOOL_FACTURE(nFact, isService)
 	LOCAL date := GET_DATE_CREATION(nFact)
 	LOCAL remise := GET_TOTAL_REMISE(nFact)
 	LOCAL vat1 := GET_VAT1_BY_FACTURE(nFact)
+	LOCAL vat2 := GET_VAT2_BY_FACTURE(nFact)
 	LOCAL tableNumber := GET_NUM_TABLE(nFact)
 	LOCAL customerNumber := GET_NB_CLIENT(nFact)
 	LOCAL total := GET_TOTAL(nFact)
 	LOCAL totalPlat := GET_TOTAL_55(nFact) - GET_TOTAL_REMISE_55(nFact)
 	LOCAL totalBoisson := GET_TOTAL_196(nFact) - GET_TOTAL_REMISE_196(nFact)
 	
-	PRINT_RECEIPT(date, isService, tableNumber, customerNumber, contentList, total, remise, COMPUTE_TVA(totalPlat, vat1), COMPUTE_TVA(totalBoisson, vat2Value))
+	PRINT_RECEIPT(date, isService, tableNumber, customerNumber, contentList, total, remise, COMPUTE_TVA(totalPlat, vat1), COMPUTE_TVA(totalBoisson, vat2))
 RETURN
 
 PROCEDURE ADD_MENU_TO_TABLE(nFact, numTable, nbClient, nTableTaux)
@@ -1249,39 +1304,56 @@ PROCEDURE ADD_MENU_TO_TABLE(nFact, numTable, nbClient, nTableTaux)
 	DispBox(2, 40, nRow - 2, 78, B_SINGLE, "RB+/B+")
 	DO WHILE LastKey() <> K_ESC
 		codePlat := space(4) /* repositionne le champ du code à vide */
+		prix := 0
 		quantite := 1 /* repositionne la quantité à 1 */
 		@ beginRow, beginCol GET codePlat PICTURE "@!"
 		READ
-		USE Menu ALIAS menu
-		SELECT menu
-		INDEX ON Upper(menu->code_plat) TO Menu
-		DbSeek(codePlat)
-		IF Found()
-			libelle := menu->libelle
-			prix := menu->prix
-			@ beginRow, beginCol + 5 SAY libelle PICTURE "@!S20"
-			@ beginRow, beginCol + 26 GET quantite PICTURE "99"
+		
+		IF AllTrim(codePlat) == CODE_SUPPLEMENT
+			libelle := SUPPLEMENT_MSG
+			@ beginRow, beginCol + 5 SAY libelle PICTURE "@!S14"
+			@ beginRow, beginCol + 20 GET quantite PICTURE "99"
+			@ beginRow, beginCol + 23 GET prix PICTURE "999.99"
 			READ
 			@ beginRow, beginCol + 29 SAY prix * quantite PICTURE "999.99"
-			INSERER_CONTENT_TABLE(nFact, numTable, date, codePlat, quantite, nbClient, nTableTaux)
+			INSERER_CONTENT_TABLE_CUSTOM(nFact, numTable, date, codePlat, libelle, prix, quantite, nbClient, nTableTaux)
 			IF beginRow >= nRow - 4
 				@ 3, 3 CLEAR TO nRow - 3, 37
 				beginRow := 3
 			ENDIF
 			beginRow++
 		ELSE
-			IF codePlat == space(4)
-				EXIT
+			USE Menu ALIAS menu
+			SELECT menu
+			INDEX ON Upper(menu->code_plat) TO Menu
+			DbSeek(codePlat)
+			IF Found()
+				libelle := menu->libelle
+				prix := menu->prix
+				@ beginRow, beginCol + 5 SAY libelle PICTURE "@!S20"
+				@ beginRow, beginCol + 26 GET quantite PICTURE "99"
+				READ
+				@ beginRow, beginCol + 29 SAY prix * quantite PICTURE "999.99"
+				INSERER_CONTENT_TABLE(nFact, numTable, date, codePlat, quantite, nbClient, nTableTaux)
+				IF beginRow >= nRow - 4
+					@ 3, 3 CLEAR TO nRow - 3, 37
+					beginRow := 3
+				ENDIF
+				beginRow++
+			ELSE
+				IF codePlat == space(4)
+					EXIT
+				ENDIF
+				@ beginRow, beginCol + 5 SAY "code inexistant" PICTURE "@!"
+				Tone(TONE_FREQUENCY, 2)
 			ENDIF
-			@ beginRow, beginCol + 5 SAY "code inexistant" PICTURE "@!"
-			Tone(TONE_FREQUENCY, 2)
 		ENDIF
 	ENDDO
 	CHECK_NFACT(nFact)
 	USE
 RETURN
 
-PROCEDURE APPLICATION_REDUCTION(nFact, pourcent)
+FUNCTION APPLICATION_REDUCTION(nFact, pourcent)
 	LOCAL GetList := {}
 	LOCAL newPourcent := pourcent
 	LOCAL savePourcent
@@ -1292,7 +1364,7 @@ PROCEDURE APPLICATION_REDUCTION(nFact, pourcent)
 	@ 12, 30 SAY "remise : " PICTURE "@!" GET newPourcent PICTURE "999"
 	READ
 	IF LastKey() == K_ESC
-		RETURN
+		RETURN pourcent
 	ENDIF
 	IF newPourcent > 100 .OR. newPourcent < 0
 		savePourcent := 100
@@ -1301,7 +1373,7 @@ PROCEDURE APPLICATION_REDUCTION(nFact, pourcent)
 	ENDIF
 	UPDATE_LISTE_TABLE_TAUX(nFact, savePourcent)
 	UPDATE_CONTENT_TABLE_REMISE(nFact, savePourcent)
-RETURN
+RETURN savePourcent
 
 
 /* Méthode de navigation dans la liste des plats */
