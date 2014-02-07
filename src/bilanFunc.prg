@@ -18,7 +18,10 @@
 GLOBAL EXTERN vat1ChangeDate
 GLOBAL EXTERN vat1BeforeChangeDate
 GLOBAL EXTERN vat1AfterChangeDate
-GLOBAL EXTERN vat2Value
+GLOBAL EXTERN vat2ChangeDate
+GLOBAL EXTERN vat2BeforeChangeDate
+GLOBAL EXTERN vat2AfterChangeDate
+//GLOBAL EXTERN vat2Value
 
 /* Méthode qui insére une nouvelle entrée dans le bilan si la date est nouvelle sinon, elle la met à jour */
 PROCEDURE CREATE_OR_UPDATE_BILAN(date, nbClient, total, st_55, st_196, service, emporte, cb, chq, esp, tr)
@@ -32,6 +35,7 @@ RETURN
 /* Méthode qui insére une nouvelle ligne dans la table des bilans */
 PROCEDURE INSERER_BILAN(date, nbClient, total, st_55, st_196, service, emporte, cb, chq, esp, tr)
    LOCAL vat1 := GET_VAT1_BY_DATE(date)
+   LOCAL vat2 := GET_VAT2_BY_DATE(date)
    USE BILANY ALIAS bilany NEW
    APPEND BLANK
    REPLACE bilany->date WITH date, ;
@@ -40,7 +44,7 @@ PROCEDURE INSERER_BILAN(date, nbClient, total, st_55, st_196, service, emporte, 
 		 bilany->st_55 WITH st_55, ;
 		 bilany->st_196 WITH st_196, ;
 		 bilany->tva_1 WITH COMPUTE_TVA(bilany->st_55, vat1), ;
-         bilany->tva_2 WITH COMPUTE_TVA(bilany->st_196, vat2Value), ;
+         bilany->tva_2 WITH COMPUTE_TVA(bilany->st_196, vat2), ;
          bilany->service WITH service, ;
          bilany->emporte WITH emporte, ;
          bilany->cb WITH cb, ;
@@ -71,13 +75,14 @@ RETURN total
 /* Méthode qui met à jour les données correspondant à la date */
 PROCEDURE UPDATE_BILAN(date, nbClient, total, st_55, st_196, service, emporte, cb, chq, esp, tr)
    LOCAL vat1 := GET_VAT1_BY_DATE(date)
+   LOCAL vat2 := GET_VAT2_BY_DATE(date)
    USE BILANY ALIAS bilany NEW
    REPLACE bilany->nb_client WITH bilany->nb_client + nbClient, ;
          bilany->total WITH bilany->total + total, ;
 		 bilany->st_55 WITH bilany->st_55 + st_55, ;
 		 bilany->st_196 WITH bilany->st_196 + st_196, ;
 		 bilany->tva_1 WITH COMPUTE_TVA(bilany->st_55, vat1), ;
-         bilany->tva_2 WITH COMPUTE_TVA(bilany->st_196, vat2Value), ;
+         bilany->tva_2 WITH COMPUTE_TVA(bilany->st_196, vat2), ;
          bilany->service WITH bilany->service + service, ;
          bilany->emporte WITH bilany->emporte + emporte, ;
          bilany->cb WITH bilany->cb + cb, ;
@@ -115,10 +120,11 @@ RETURN
 PROCEDURE DISP_RECAP_BILAN(annee, mois)
    LOCAL date := CtoD("01/" + str(mois) + "/" + str(annee))
    LOCAL vat1 := GET_VAT1_BY_DATE(date)
+   LOCAL vat2 := GET_VAT2_BY_DATE(date)
    LOCAL total := GET_TOTAL_FIELD_BILAN(annee, mois, TOTAL)
    LOCAL nbClient := GET_TOTAL_FIELD_BILAN(annee, mois, NB_CLIENT)
    LOCAL tva1 := COMPUTE_TVA(GET_TOTAL_FIELD_BILAN(annee, mois, ST_55), vat1)
-   LOCAL tva2 := COMPUTE_TVA(GEt_TOTAL_FIELD_BILAN(annee, mois, ST_196), vat2Value)
+   LOCAL tva2 := COMPUTE_TVA(GEt_TOTAL_FIELD_BILAN(annee, mois, ST_196), vat2)
    LOCAL service := GET_TOTAL_FIELD_BILAN(annee, mois, SERVICE)
    LOCAL emporte := GET_TOTAL_FIELD_BILAN(annee, mois, EMPORTE)
    LOCAL cb := GET_TOTAL_FIELD_BILAN(annee, mois, CB)
@@ -132,7 +138,7 @@ PROCEDURE DISP_RECAP_BILAN(annee, mois)
    @ 19, 63 SAY tr PICTURE "@!R tr : 999999.99"
    @ 21, 3 SAY nbClient PICTURE "@!R nb clts : 999999"
    @ 21, 23 SAY "tva " + str(vat1, 5, 2) + " % : " + AllTrim(str(tva1)) PICTURE "@!"
-   @ 21, 53 SAY "tva " + str(vat2Value, 5, 2) + " % : " + AllTrim(str(tva2)) PICTURE "@!"
+   @ 21, 53 SAY "tva " + str(vat2, 5, 2) + " % : " + AllTrim(str(tva2)) PICTURE "@!"
    @ 23, 3 SAY total PICTURE "@!R total : 999999.99"
    @ 23, 23 SAY service PICTURE "@!R service : 999999.99"
    @ 23, 53 SAY emporte PICTURE "@!R emporte : 999999.99"
@@ -142,12 +148,13 @@ RETURN
 PROCEDURE PRINT_BILAN(annee, mois)
    LOCAL date := CtoD("01/" + str(mois) + "/" + str(annee))
    LOCAL vat1 := GET_VAT1_BY_DATE(date)
+   LOCAL vat2 := GET_VAT2_BY_DATE(date)
    LOCAL total := GET_TOTAL_FIELD_BILAN(annee, mois, TOTAL)
    LOCAL nbClient := GET_TOTAL_FIELD_BILAN(annee, mois, NB_CLIENT)
    LOCAL st_55 := GET_TOTAL_FIELD_BILAN(annee, mois, ST_55)
    LOCAL st_196 := GET_TOTAL_FIELD_BILAN(annee, mois, ST_196)
    LOCAL tva1 := COMPUTE_TVA(GET_TOTAL_FIELD_BILAN(annee, mois, ST_55), vat1)
-   LOCAL tva2 := COMPUTE_TVA(GET_TOTAL_FIELD_BILAN(annee, mois, ST_196), vat2Value)
+   LOCAL tva2 := COMPUTE_TVA(GET_TOTAL_FIELD_BILAN(annee, mois, ST_196), vat2)
    LOCAL service := GET_TOTAL_FIELD_BILAN(annee, mois, SERVICE)
    LOCAL emporte := GET_TOTAL_FIELD_BILAN(annee, mois, EMPORTE)
    LOCAL cb := GET_TOTAL_FIELD_BILAN(annee, mois, CB)
@@ -165,15 +172,16 @@ PROCEDURE PRINT_BILAN(annee, mois)
    LOCAL doubleStrike := Chr(27)+Chr(71)+Chr(1)
    LOCAL doubleStrikeOff := Chr(27)+Chr(71)+Chr(0)
    
-   gprinter = GetDefaultPrinter()
+   //gprinter = GetDefaultPrinter()
+   //gprinter = COM1
    SET PRINTER ON
-   SET PRINTER TO &gprinter
+   SET PRINTER TO LPT1
    SET CONSOLE OFF
    
    ? init
    ? " La recette de : " + AllTrim(str(mois)) + "/" + AllTrim(str(annee))
    ? "------------------------------------------"
-   ? "Date   NbClt     Total   St_" + str(vat1 * 10, 2, 0) + "    St_" + str(vat2Value * 10, 3, 0) + "  "
+   ? "Date   NbClt     Total   St_" + str(vat1 * 10, 2, 0) + "    St_" + str(vat2 * 10, 3, 0) + "  "
    ? "------------------------------------------"
    FOR itr := 1 TO LEN(data)
       ? data[itr][1] + " " + data[itr][2] + " " + data[itr][3] + " " + data[itr][6] + " " + data[itr][7]
@@ -183,12 +191,12 @@ PROCEDURE PRINT_BILAN(annee, mois)
    
    ? "------------------------------------------"
    ? "  NbClient:" + AllTrim(str(nbClient)) +           "    TOTAL:" + PadL(AllTrim(str(total)), 10)
-   ? "{   St_" + str(vat1*10, 2, 0) + ":" + PadL(AllTrim(str(st_55)), 10) +    "   St_" + str(vat2Value*10, 3, 0) + ":" + PadL(AllTrim(str(st_196)), 10) + " }"
+   ? "{   St_" + str(vat1*10, 2, 0) + ":" + PadL(AllTrim(str(st_55)), 10) +    "   St_" + str(vat2*10, 3, 0) + ":" + PadL(AllTrim(str(st_196)), 10) + " }"
    ? "{      CB:" + PadL(AllTrim(str(cb)), 10) +        "       CQ:" + PadL(AllTrim(str(chq)), 10) + " }"
    ? "{      ES:" + PadL(AllTrim(str(esp)), 10) +     "       TR:" + PadL(AllTrim(str(tr)), 10) + " }"
    ?
    ? "TOTAL TVA:" + PadL(AllTrim(str(tva1 + tva2)), 10)
-   ? "{  " + str(vat1, 5, 2) + "%:" + PadL(AllTrim(str(tva1)), 10) +    "   " + str(vat2Value, 5, 2) + "%:" + PadL(AllTrim(str(tva2)), 10) + " }"
+   ? "{  " + str(vat1, 5, 2) + "%:" + PadL(AllTrim(str(tva1)), 10) +    "   " + str(vat2, 5, 2) + "%:" + PadL(AllTrim(str(tva2)), 10) + " }"
    ? "------------------------------------------"
    ? cutting
    EJECT
@@ -201,6 +209,7 @@ RETURN
 FUNCTION GET_LISTE_BILAN_IMPRESSION(annee, mois)
 	 LOCAL date := CtoD("01/" + str(mois) + "/" + str(annee))
 	 LOCAL vat1 := GET_VAT1_BY_DATE(date)
+	 LOCAL vat2 := GET_VAT2_BY_DATE(date)
      LOCAL ret := {}
      USE BILANY ALIAS bilany NEW
      INDEX ON bilany->date TO bilany
@@ -210,7 +219,7 @@ FUNCTION GET_LISTE_BILAN_IMPRESSION(annee, mois)
                  PadL(AllTrim(str(bilany->nb_client)), 3),;
                  PadL(AllTrim(str(bilany->total)), 10),;
 				 PadL(AllTrim(str(COMPUTE_TVA(bilany->st_55, vat1))), 10),;
-                 PadL(AllTrim(str(COMPUTE_TVA(bilany->st_196, vat2Value))), 10),;
+                 PadL(AllTrim(str(COMPUTE_TVA(bilany->st_196, vat2))), 10),;
 				 PadL(AllTrim(str(bilany->st_55)), 10),;
 				 PadL(AllTrim(str(bilany->st_196)), 10),;
                  PadL(AllTrim(str(bilany->cb)), 10),;

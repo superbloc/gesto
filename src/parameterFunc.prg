@@ -11,7 +11,10 @@
 GLOBAL vat1ChangeDate
 GLOBAL vat1BeforeChangeDate
 GLOBAL vat1AfterChangeDate
-GLOBAL vat2Value
+GLOBAL vat2ChangeDate
+GLOBAL vat2BeforeChangeDate
+GLOBAL vat2AfterChangeDate
+GLOBAL defautRemise
 
 GLOBAL EXTERN nRow
 GLOBAL EXTERN nCol
@@ -36,11 +39,33 @@ PROCEDURE INIT_GLOBALVAR
 		vat1AfterChangeDate := Val(parameter->PARAM_VAL)
 	ENDIF
 	
+	DbSeek("VAT2_CHG_DATE")
+	IF Found()
+		vat2ChangeDate := CtoD(parameter->PARAM_VAL)
+	ENDIF
+	
+	DbSeek("VAT2_BF_CHG_DATE")
+	IF Found()
+		vat2BeforeChangeDate := Val(parameter->PARAM_VAL)
+	ENDIF
+	
+	DbSeek("VAT2_AF_CHG_DATE")
+	IF Found()
+		vat2AfterChangeDate := Val(parameter->PARAM_VAL)
+	ENDIF
+	
+	DbSeek("EMPORTE_REMISE")
+	IF Found()
+		defautRemise := Val(parameter->PARAM_VAL)
+	ENDIF
+	
+	/*
 	DbSeek("VAT2")
 	IF Found()
 		vat2Value := Val(parameter->PARAM_VAL)
 	ENDIF
-
+	*/
+	
 	CLOSE parameter
 RETURN
 

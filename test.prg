@@ -1,6 +1,0 @@
-
-
-PROCEDURE MAIN
-	? HB_MD5("8888")
-RETURN
-

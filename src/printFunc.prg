@@ -22,12 +22,16 @@ GLOBAL EXTERN CODE_POSTAL
 GLOBAL EXTERN VILLE
 GLOBAL EXTERN TEL
 GLOBAL EXTERN SIRET
-GLOBAL EXTERN DEFAUT_REMISE
+//GLOBAL EXTERN DEFAUT_REMISE
 
 GLOBAL EXTERN vat1ChangeDate
 GLOBAL EXTERN vat1BeforeChangeDate
 GLOBAL EXTERN vat1AfterChangeDate
-GLOBAL EXTERN vat2Value
+GLOBAL EXTERN vat2ChangeDate
+GLOBAL EXTERN vat2BeforeChangeDate
+GLOBAL EXTERN vat2AfterChangeDate
+GLOBAL EXTERN defautRemise
+//GLOBAL EXTERN vat2Value
 
 // On active le mode impression
 PROCEDURE PRINTER_ON()
@@ -131,7 +135,7 @@ PROCEDURE PRINT_VAT(date, vat1Value, vat2tValue)
 	LOCAL vat1ValueStr := Str(vat1Value, ,2,.T.)
 	LOCAL vat2ValueStr
 	LOCAL vat1Str := Str(GET_VAT1_BY_DATE(date),5,2,.T.)
-	LOCAL vat2Str := Str(vat2Value,5,2,.T.)
+	LOCAL vat2Str := Str(GET_VAT2_BY_DATE(date),5,2,.T.)
 	? Justify({"Dont TVA", vat1Str+"% :", vat1ValueStr}, "#", {9, 27, PAPER_WIDTH - 7})
 	IF .NOT. HB_IsNIL(vat2tValue)
 	vat2ValueStr := Str(vat2tValue, ,2,.T.)

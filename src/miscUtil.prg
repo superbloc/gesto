@@ -2,10 +2,13 @@
 #include "Inkey.ch"
 
 /* Méthode et fonction en tout genre */
-GLOBAL EXTERN vat1ChangeDate            // Date de changement de la TVA1 (tva concernant les plats)
-GLOBAL EXTERN vat1BeforeChangeDate      // Valeur de la tva1 avant la date vat1ChangeDate
-GLOBAL EXTERN vat1AfterChangeDate       // Valeur de la tva1 après la date vat1ChangeDate
-GLOBAL EXTERN vat2Value                 // Valeur de la tva2 (TODO : mettre en place un système similaire au TVA1)
+GLOBAL EXTERN vat1ChangeDate
+GLOBAL EXTERN vat1BeforeChangeDate
+GLOBAL EXTERN vat1AfterChangeDate
+GLOBAL EXTERN vat2ChangeDate
+GLOBAL EXTERN vat2BeforeChangeDate
+GLOBAL EXTERN vat2AfterChangeDate
+//GLOBAL EXTERN vat2Value
 
 /* 
 Méthode permettant de formatter l'affichage des plats à saisir dans la vue CONTENU_TABLE
@@ -116,6 +119,22 @@ FUNCTION GET_VAT1_BY_FACTURE(nFact)
 	ENDIF
 RETURN retVal
 
+/* 
+fonction qui retourne la bonne valeur pour la tva2 en fonction de la date de la facture.
+Si nFact est null alors on prend la date du jour.
+Sinon, on récupère la date de création de la table. 
+*/
+FUNCTION GET_VAT2_BY_FACTURE(nFact)
+	LOCAL testDate := Date()
+	LOCAL retVal := vat2BeforeChangeDate
+	IF nFact <> NIL
+		testDate = GET_DATE_CREATION(nFact)
+	ENDIF
+	IF testDate >= vat2ChangeDate
+		retVal := vat2AfterChangeDate
+	ENDIF
+RETURN retVal
+
 // fonction qui justifie plusieurs morceaux de textes.
 // TODO : à améliorer, notamment sur la gestion des valeurs passées en arguments.
 FUNCTION Justify(strList, splitChar, positionList, justifyStyle, paddingChar)
@@ -161,6 +180,21 @@ FUNCTION GET_VAT1_BY_DATE(date)
 	ENDIF
 	IF testDate >= vat1ChangeDate
 		retVal := vat1AfterChangeDate
+	ENDIF
+RETURN retVal
+
+/*
+fonction qui retourne la bonne valeur de la tva2 en fonction de la date
+Si date est null alors on prend la date du jour
+*/
+FUNCTION GET_VAT2_BY_DATE(date)
+	LOCAL testDate := Date()
+	LOCAL retVal := vat2BeforeChangeDate
+	IF date <> NIL
+		testDate := date
+	ENDIF
+	IF testDate >= vat2ChangeDate
+		retVal := vat2AfterChangeDate
 	ENDIF
 RETURN retVal
 
