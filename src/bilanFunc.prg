@@ -172,15 +172,16 @@ PROCEDURE PRINT_BILAN(annee, mois)
    LOCAL doubleStrike := Chr(27)+Chr(71)+Chr(1)
    LOCAL doubleStrikeOff := Chr(27)+Chr(71)+Chr(0)
    
-   //LOCAL gprinter := GetDefaultPrinter()
+   //gprinter = GetDefaultPrinter()
+   //gprinter = COM1
    SET PRINTER ON
-   SET PRINTER TO COM1
+   SET PRINTER TO LPT1
    SET CONSOLE OFF
    
    ? init
    ? " La recette de : " + AllTrim(str(mois)) + "/" + AllTrim(str(annee))
    ? "------------------------------------------"
-   ? "Date   NbClt     Total   St_" + str(vat1 * 10, 3, 0) + "    St_" + str(vat2 * 10, 3, 0) + "  "
+   ? "Date   NbClt     Total   St_" + str(vat1 * 10, 2, 0) + "    St_" + str(vat2 * 10, 3, 0) + "  "
    ? "------------------------------------------"
    FOR itr := 1 TO LEN(data)
       ? data[itr][1] + " " + data[itr][2] + " " + data[itr][3] + " " + data[itr][6] + " " + data[itr][7]
@@ -190,7 +191,7 @@ PROCEDURE PRINT_BILAN(annee, mois)
    
    ? "------------------------------------------"
    ? "  NbClient:" + AllTrim(str(nbClient)) +           "    TOTAL:" + PadL(AllTrim(str(total)), 10)
-   ? "{  St_" + str(vat1*10, 3, 0) + ":" + PadL(AllTrim(str(st_55)), 10) +    "   St_" + str(vat2*10, 3, 0) + ":" + PadL(AllTrim(str(st_196)), 10) + " }"
+   ? "{   St_" + str(vat1*10, 2, 0) + ":" + PadL(AllTrim(str(st_55)), 10) +    "   St_" + str(vat2*10, 3, 0) + ":" + PadL(AllTrim(str(st_196)), 10) + " }"
    ? "{      CB:" + PadL(AllTrim(str(cb)), 10) +        "       CQ:" + PadL(AllTrim(str(chq)), 10) + " }"
    ? "{      ES:" + PadL(AllTrim(str(esp)), 10) +     "       TR:" + PadL(AllTrim(str(tr)), 10) + " }"
    ?

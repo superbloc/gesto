@@ -61,9 +61,8 @@ echo Compiling...
 %HB_BIN_INSTALL%\harbour %SRC_DIR%\convertRecettej.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
 %HB_BIN_INSTALL%\harbour %SRC_DIR%\test.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
 %HB_BIN_INSTALL%\harbour %SRC_DIR%\loadMenu.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
-
+%HB_BIN_INSTALL%\harbour %SRC_DIR%\CONVPLAT.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
 rem %HB_BIN_INSTALL%\harbour parameterFunc.prg -n -q0 -gc -i%HB_INC_INSTALL% -p -w
-
 bcc32 -O2 -I%HB_INC_INSTALL% -L%HB_LIB_INSTALL% create_menu_table.c %HB_LIBLIST%
 bcc32 -O2 -I%HB_INC_INSTALL% -L%HB_LIB_INSTALL% create_listeTable_table.c %HB_LIBLIST%
 bcc32 -O2 -I%HB_INC_INSTALL% -L%HB_LIB_INSTALL% create_contentTable_table.c %HB_LIBLIST%
@@ -76,6 +75,7 @@ bcc32 -O2 -I%HB_INC_INSTALL% -L%HB_LIB_INSTALL% create_stockTable.c %HB_LIBLIST%
 bcc32 -O2 -I%HB_INC_INSTALL% -L%HB_LIB_INSTALL% convertRecettej.c %HB_LIBLIST%
 bcc32 -O2 -I%HB_INC_INSTALL% -L%HB_LIB_INSTALL% test.c %HB_LIBLIST%
 bcc32 -O2 -I%HB_INC_INSTALL% -L%HB_LIB_INSTALL% loadMenu.c %HB_LIBLIST%
+bcc32 -O2 -I%HB_INC_INSTALL% -L%HB_LIB_INSTALL% CONVPLAT.c %HB_LIBLIST%
 rem bcc32 -O2 -I%HB_INC_INSTALL% -L%HB_LIB_INSTALL% parameterFunc.c %HB_LIBLIST%
 GOTO clean
 

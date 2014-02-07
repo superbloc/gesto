@@ -151,9 +151,9 @@ PROCEDURE PRINT_BILANM(annee)
    LOCAL doubleStrike := Chr(27)+Chr(71)+Chr(1)
    LOCAL doubleStrikeOff := Chr(27)+Chr(71)+Chr(0) 
  
-   LOCAL gprinter := GetDefaultPrinter()
+   gprinter = GetDefaultPrinter()
    SET PRINTER ON
-   SET PRINTER TO PRN
+   SET PRINTER TO &gprinter
    SET CONSOLE OFF
    
    ? init
